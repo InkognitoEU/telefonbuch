@@ -1,11 +1,10 @@
-
 <!doctype html>
 <html lang="de">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Dashboard — Telefonbuch · Notizen · Fälle</title>
-  <meta name="description" content="Lokales Dashboard mit Telefonbuch, Notizen und Fallverwaltung. Apple-inspiriertes Dark-Design (Glas · sanfte, federnde Animationen) + fester Startsound." />
+  <meta name="description" content="Lokales Dashboard mit Telefonbuch, Notizen und Fallverwaltung. Apple-inspiriertes Dark-Design (Glas · sanfte, federnde Animationen) + Startsound (Upload oder Synth)." />
   <link rel="icon" href="data:;base64,iVBORw0KGgo=" />
   <style>
     /* =========================================================
@@ -52,6 +51,9 @@
     .nav button{all:unset; display:flex; align-items:center; gap:10px; padding:12px 14px; border-radius:14px; cursor:pointer; color:var(--text); border:1px solid transparent}
     .nav button:hover{background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.14)}
     .nav button.active{background:linear-gradient(135deg, rgba(10,132,255,.22), rgba(90,200,250,.18)); border-color:rgba(255,255,255,.22)}
+
+    .settings{margin-top:18px; display:grid; gap:8px}
+    .settings .hint{font-size:.9rem; color:var(--muted)}
 
     @media (max-width:1024px){
       .sidebar{position:fixed; left:-100%; width:min(320px,90vw); transition:left .26s cubic-bezier(.2,.9,.2,1); box-shadow:0 16px 40px rgba(0,0,0,.5)}
@@ -117,6 +119,18 @@
     .splash h2{margin:0; font-size:clamp(1.6rem,4vw,2.6rem)}
     .splash.fadeout{animation:splashout .7s cubic-bezier(.2,1,.2,1) forwards}
     @keyframes splashout{to{opacity:0; transform:scale(1.02); visibility:hidden}}
+    /* Loading dots */
+    .dot{display:inline-block; width:0.6ch; text-align:left; opacity:0}
+    @keyframes blink{0%,20%{opacity:0}40%,100%{opacity:1}}
+    .dot1{animation:blink 1.2s infinite}
+    .dot2{animation:blink 1.2s infinite .2s}
+    .dot3{animation:blink 1.2s infinite .4s}
+    /* Loading dots */
+    .dot{display:inline-block; width:0.6ch; text-align:left; opacity:0}
+    @keyframes blink{0%,20%{opacity:0}40%,100%{opacity:1}}
+    .dot1{animation:blink 1.2s infinite}
+    .dot2{animation:blink 1.2s infinite .2s}
+    .dot3{animation:blink 1.2s infinite .4s}
   </style>
 </head>
 <body>
@@ -129,12 +143,13 @@
   <div class="splash" id="splash">
     <div class="box">
       <h2>Willkommen</h2>
-      <div class="muted">Lädt Oberfläche…</div>
+      <div class="muted" style="margin-top:.35rem">Dashboard wird geladen<span class="dot dot1">.</span><span class="dot dot2">.</span><span class="dot dot3">.</span></div>
     </div>
   </div>
-
-  <!-- Fixed startup sound: place your audio file as startup.mp3 in repo root -->
-  <audio id="startupAudio" src="mm.ogg" preload="auto" autoplay playsinline></audio></audio>
+    </div>
+  </div>
+    </div>
+  </div>
 
   <button class="hamburger" id="hamburger" aria-label="Menü öffnen"><span></span></button>
 
@@ -263,9 +278,10 @@
     const uid = ()=>Math.random().toString(36).slice(2,10);
     const escapeHtml = s => (s+'').replace(/[&<>"']/g, ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
 
-    const STORE_CONTACTS='ui_contacts_dark_blue_v2';
-    const STORE_NOTES='ui_notes_dark_blue_v2';
-    const STORE_CASES='ui_cases_dark_blue_v2';
+    const STORE_CONTACTS='ui_contacts_dark_blue_v1';
+    const STORE_NOTES='ui_notes_dark_blue_v1';
+    const STORE_CASES='ui_cases_dark_blue_v1';
+    
 
     const state={contacts:[], notes:[], cases:[], sortBy:'name', sortDir:'asc', q:''};
 
@@ -281,13 +297,17 @@
       if(matchMedia('(max-width:1024px)').matches) $('#sidebar').classList.remove('open');
     }
 
-    function playStartup(){
-      const a = document.getElementById('startupAudio');
-      if(!a) return;
-      const tryPlay = ()=>{ a.currentTime=0; a.volume=0.9; a.play().catch(()=>{}); };
-      // Try immediately and again after first interaction if blocked
-      tryPlay();
-      window.addEventListener('pointerdown', tryPlay, {once:true});
+    let audioCtx; 
+    async function playStartup(){ try{ const a=document.getElementById('startupAudio'); a && a.play().catch(()=>{}); }catch(e){} }); }catch(e){} } else {
+          // synth fallback (blue chime)
+          audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+          const t = audioCtx.currentTime;
+          const gain = audioCtx.createGain(); gain.gain.value = 0.0001; gain.connect(audioCtx.destination);
+          const env = (when,dur)=>{ gain.gain.setValueAtTime(0.0001, when); gain.gain.exponentialRampToValueAtTime(0.18, when+0.02); gain.gain.exponentialRampToValueAtTime(0.0001, when+dur); };
+          [523.25,659.25,783.99].forEach((f,i)=>{ const o=audioCtx.createOscillator(); o.type='sine'; o.frequency.setValueAtTime(f, t); o.connect(gain); o.start(t+0.03*i); o.stop(t+1.3); });
+          env(t,1.3);
+        }
+      }catch(e){ /* autoplay block -> handled by first interaction */ }
     }
 
     function hideSplash(){ const s=$('#splash'); s.classList.add('fadeout'); setTimeout(()=>s.remove(), 700); }
@@ -320,14 +340,14 @@
     function addNote(note){ state.notes.unshift({id:uid(),...note}); save(); renderNotes(); }
     function deleteNote(id){ state.notes=state.notes.filter(x=>x.id!==id); save(); renderNotes(); }
 
-    function openNoteModal(n){ const modal=document.createElement('div'); modal.className='glass fade-in'; modal.style.cssText='position:fixed;inset:0;display:grid;place-items:center;background:rgba(2,6,23,.55);padding:20px;z-index:40'; const box=document.createElement('div'); box.className='glass'; box.style.cssText='max-width:920px;width:95vw;border-radius:20px;padding:18px;'; box.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h3 style="margin:0">${escapeHtml(n.title||'Ohne Titel')}</h3><button id=\"closeModal\" class=\"btn ghost\">Schließen</button></div><div class=\"muted\" style=\"margin:.25rem 0\">${escapeHtml(n.tags||'')}</div><div style=\"display:grid;grid-template-columns:300px 1fr;gap:14px;margin-top:12px\"><div>${n.image?`<img src=\"${n.image}\" alt=\"Bild\" style=\"width:100%;border-radius:16px;border:1px solid var(--border);object-fit:cover\"/>`:'<div class=\"muted\">Kein Bild</div>'}</div><div style=\"white-space:pre-wrap\">${escapeHtml(n.text||'')}</div></div>`; modal.appendChild(box); modal.addEventListener('click',e=>{ if(e.target===modal||e.target.id==='closeModal') modal.remove();}); document.body.appendChild(modal); }
+    function openNoteModal(n){ const modal=document.createElement('div'); modal.className='glass fade-in'; modal.style.cssText='position:fixed;inset:0;display:grid;place-items:center;background:rgba(2,6,23,.55);padding:20px;z-index:40'; const box=document.createElement('div'); box.className='glass'; box.style.cssText='max-width:920px;width:95vw;border-radius:20px;padding:18px;'; box.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h3 style="margin:0">${escapeHtml(n.title||'Ohne Titel')}</h3><button id="closeModal" class="btn ghost">Schließen</button></div><div class="muted" style="margin:.25rem 0">${escapeHtml(n.tags||'')}</div><div style="display:grid;grid-template-columns:300px 1fr;gap:14px;margin-top:12px"><div>${n.image?`<img src="${n.image}" alt="Bild" style="width:100%;border-radius:16px;border:1px solid var(--border);object-fit:cover"/>`:'<div class="muted">Kein Bild</div>'}</div><div style="white-space:pre-wrap">${escapeHtml(n.text||'')}</div></div>`; modal.appendChild(box); modal.addEventListener('click',e=>{ if(e.target===modal||e.target.id==='closeModal') modal.remove();}); document.body.appendChild(modal); }
 
     // ===== Cases (KriPo-Seite) =====
     function renderCases(){ const tbody=$('#casesBody'); tbody.innerHTML=''; for(const c of state.cases){ const tr=document.createElement('tr'); tr.innerHTML=`<td>${escapeHtml(c.number||'—')}</td><td>${escapeHtml(c.title||'')}</td><td>${escapeHtml(c.status||'')}</td><td class="actions"><button class="btn ghost" data-act="open-case" data-id="${c.id}">Öffnen</button><button class="btn danger" data-act="del-case" data-id="${c.id}">Löschen</button></td>`; tbody.appendChild(tr);} }
     function addCase(obj){ state.cases.unshift({id:uid(), ...obj, interrogations:[], images:[]}); save(); renderCases(); }
     function deleteCase(id){ state.cases=state.cases.filter(x=>x.id!==id); save(); renderCases(); }
 
-    function openCaseModal(c){ const modal=document.createElement('div'); modal.className='glass fade-in'; modal.style.cssText='position:fixed;inset:0;display:grid;place-items:center;background:rgba(2,6,23,.55);padding:20px;z-index:40'; const box=document.createElement('div'); box.className='glass'; box.style.cssText='max-width:1000px;width:96vw;border-radius:20px;padding:18px;'; box.innerHTML=`<div style=\"display:flex;justify-content:space-between;align-items:center\"><h3 style=\"margin:0\">${escapeHtml(c.title)} <span class=\"pill\" style=\"margin-left:8px\">${escapeHtml(c.number)}</span></h3><button id=\"closeCase\" class=\"btn ghost\">Schließen</button></div><div class=\"muted\" style=\"margin:.3rem 0\">Status: ${escapeHtml(c.status||'—')} · Tags: ${escapeHtml(c.tags||'—')}</div><div style=\"display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px\"><div><h4>Beteiligte</h4><div class=\"glass\" style=\"padding:10px;border-radius:14px\">${escapeHtml(c.people||'—')}</div><h4 style=\"margin-top:12px\">Beschreibung</h4><div class=\"glass\" style=\"padding:10px;border-radius:14px;white-space:pre-wrap\">${escapeHtml(c.desc||'—')}</div></div><div><h4>Verhöre</h4><div id=\"interroList\" class=\"glass\" style=\"padding:10px;border-radius:14px;max-height:220px;overflow:auto\">${(c.interrogations||[]).map(x=>`<div style='border-bottom:1px solid rgba(255,255,255,.08);padding:6px 0'><strong>${escapeHtml(x.when)}</strong><div style='white-space:pre-wrap'>${escapeHtml(x.text)}</div></div>`).join('') || '<div class=\"muted\">Keine Einträge</div>'}</div><div style=\"display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:10px\"><input id=\"interroText\" placeholder=\"Verhörnotiz…\"/><button id=\"addInterro\" class=\"btn primary\">Hinzufügen</button></div><h4 style=\"margin-top:12px\">Bilder</h4><div id=\"imgWrap\" style=\"display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px\">${(c.images||[]).map(u=>`<img src='${u}' alt='Bild' style='width:100%;height:90px;object-fit:cover;border-radius:12px;border:1px solid var(--border)'/>`).join('')}</div><label class=\"btn primary\" style=\"margin-top:8px;display:inline-grid\"><input id=\"caseImgInput\" type=\"file\" accept=\"image/*\" class=\"hidden\"/>Bild hochladen</label></div></div>`; modal.appendChild(box);
+    function openCaseModal(c){ const modal=document.createElement('div'); modal.className='glass fade-in'; modal.style.cssText='position:fixed;inset:0;display:grid;place-items:center;background:rgba(2,6,23,.55);padding:20px;z-index:40'; const box=document.createElement('div'); box.className='glass'; box.style.cssText='max-width:1000px;width:96vw;border-radius:20px;padding:18px;'; box.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">${escapeHtml(c.title)} <span class="pill" style="margin-left:8px">${escapeHtml(c.number)}</span></h3><button id="closeCase" class="btn ghost">Schließen</button></div><div class="muted" style="margin:.3rem 0">Status: ${escapeHtml(c.status||'—')} · Tags: ${escapeHtml(c.tags||'—')}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px"><div><h4>Beteiligte</h4><div class="glass" style="padding:10px;border-radius:14px">${escapeHtml(c.people||'—')}</div><h4 style="margin-top:12px">Beschreibung</h4><div class="glass" style="padding:10px;border-radius:14px;white-space:pre-wrap">${escapeHtml(c.desc||'—')}</div></div><div><h4>Verhöre</h4><div id="interroList" class="glass" style="padding:10px;border-radius:14px;max-height:220px;overflow:auto">${(c.interrogations||[]).map(x=>`<div style='border-bottom:1px solid rgba(255,255,255,.08);padding:6px 0'><strong>${escapeHtml(x.when)}</strong><div style='white-space:pre-wrap'>${escapeHtml(x.text)}</div></div>`).join('') || '<div class="muted">Keine Einträge</div>'}</div><div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:10px"><input id="interroText" placeholder="Verhörnotiz…"/><button id="addInterro" class="btn primary">Hinzufügen</button></div><h4 style="margin-top:12px">Bilder</h4><div id="imgWrap" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px">${(c.images||[]).map(u=>`<img src='${u}' alt='Bild' style='width:100%;height:90px;object-fit:cover;border-radius:12px;border:1px solid var(--border)'/>`).join('')}</div><label class="btn primary" style="margin-top:8px;display:inline-grid"><input id="caseImgInput" type="file" accept="image/*" class="hidden"/>Bild hochladen</label></div></div>`; modal.appendChild(box);
       modal.addEventListener('click',e=>{ if(e.target===modal||e.target.id==='closeCase'){ modal.remove(); }});
       box.querySelector('#addInterro').addEventListener('click',()=>{ const t=box.querySelector('#interroText').value.trim(); if(!t) return; const entry={when:new Date().toLocaleString(), text:t}; c.interrogations.unshift(entry); save(); openCaseModalReplace(modal, c); });
       box.querySelector('#caseImgInput').addEventListener('change', async (e)=>{ const f=e.target.files&&e.target.files[0]; if(!f) return; const url=await readAsDataURL(f); (c.images||(c.images=[])).push(url); save(); openCaseModalReplace(modal, c); });
@@ -340,8 +360,13 @@
     // ===== Init =====
     function init(){
       load(); renderContacts(); renderNotes(); renderCases();
+      // Play startup sound immediately on load (may be blocked by some browsers)
       playStartup();
-      setTimeout(hideSplash, 800);
+      // try again when page becomes visible (if first attempt was blocked)
+      document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') playStartup(); }, {once:true});
+      // Timeline: 0s splash, 2s sound start, 3s fade out
+      setTimeout(()=>{ playStartup(); }, 2000);
+      setTimeout(()=>{ const s=$('#splash'); s.classList.add('fadeout'); setTimeout(()=>s.remove(), 700); }, 3000);
 
       // Sidebar
       $('#hamburger').addEventListener('click',()=>$('#sidebar').classList.toggle('open'));

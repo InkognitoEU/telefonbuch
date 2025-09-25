@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Telefonbuch</title>
+  <meta name="description" content="Einfaches Telefonbuch im Browser – Kontakte hinzufügen, bearbeiten, löschen, suchen. Daten bleiben im Browser (localStorage)." />
+  <link rel="icon" href="data:;base64,iVBORw0KGgo=" />
+  <style>
+    :root{
+      --bg:#0f1724; --panel:#0b1220; --accent:#06b6d4; --text:#e6eef6; --muted:#9aa4b2; --danger:#ef4444;
+      --radius:14px; --gap:14px; --maxw:1100px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial; background:linear-gradient(180deg,#07101a,#0b1220); color:var(--text)}
+    .container{max-width:var(--maxw); margin:0 auto; padding:24px}
+    header{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px}
+    h1{margin:0; font-size:clamp(1.4rem,3.2vw,2rem)}
+    .brand{display:flex; gap:10px; align-items:center}
+    .logo{width:42px; height:42px; border-radius:10px; background:linear-gradient(135deg,var(--accent),#7c3aed); display:grid; place-items:center; font-weight:800; color:#021018}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(0,0,0,.05)); border:1px solid rgba(255,255,255,.06); border-radius:var(--radius); box-shadow:0 6px 18px rgba(2,6,23,.6)}
+    .controls{display:grid; gap:var(--gap); padding:16px}
+    label{display:grid; gap:6px; font-size:.95rem}
+    input, textarea, select{background:#02101b; color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:10px; padding:10px 12px; font:inherit}
+    input:focus, textarea:focus{outline:3px solid rgba(6,182,212,.18); border-color:var(--accent)}
+    .row{display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:var(--gap)}
+    .row > *{width:100%}
+    button{background:var(--accent); color:#021018; border:none; border-radius:10px; padding:10px 12px; font-weight:700; cursor:pointer}
+    button.ghost{background:transparent; color:var(--text); border:1px dashed rgba(255,255,255,.15)}
+    button.danger{background:var(--danger); color:white}
+    .toolbar{display:flex; flex-wrap:wrap; gap:10px; align-items:center}
+    .toolbar input[type="search"]{min-width:240px}
+
+    table{width:100%; border-collapse:separate; border-spacing:0; overflow:hidden}
+    thead th{position:sticky; top:0; background:#0e1729; z-index:1}
+    th, td{padding:12px 10px; text-align:left; border-bottom:1px solid rgba(255,255,255,.06)}
+    tbody tr:hover{background:rgba(255,255,255,.03)}
+    .actions{display:flex; gap:8px}
+
+    .footer{color:var(--muted); font-size:.9rem; text-align:center; padding:20px}
+    .badge{display:inline-block; padding:2px 8px; border-radius:999px; background:#041420; color:var(--muted); font-size:.8rem}
+
+    @media (max-width:900px){
+      .row{grid-template-columns:1fr 1fr;}
+      .toolbar{gap:8px}
+    }
+    @media (max-width:560px){
+      .row{grid-template-columns:1fr}
+      .toolbar{flex-direction:column; align-items:stretch}
+      .toolbar input[type="search"]{min-width:unset}
+      thead{display:none}
+      tbody tr{display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:10px}
+      tbody td{border-bottom:none}
+      tbody td::before{content:attr(data-label) ": "; color:var(--muted); font-size:.85rem}
+    }
+  </style>
+</head>
+<body>
+  <div class="container" role="document">
+    <header>
+      <div class="brand">
+        <div class="logo" aria-hidden="true">T</div>
+        <div>
+          <h1>Telefonbuch</h1>
+          <div class="badge">Deine Daten bleiben auf diesem Gerät (localStorage)</div>
+        </div>
+      </div>
+      <div class="toolbar">
+        <input id="search" type="search" placeholder="Suchen: Name, Nummer, Notiz…" aria-label="Kontakte durchsuchen" />
+        <button id="exportBtn" title="Als JSON exportieren">Export</button>
+        <label class="ghost" for="importFile" style="display:inline-grid; align-items:center; justify-items:center; padding:0;">
+          <input id="importFile" type="file" accept="application/json" style="position:absolute;opacity:0;width:0;height:0" aria-label="Kontakte aus JSON importieren" />
+          <span style="padding:10px 12px">Import</span>
+        </label>
+        <button id="clearBtn" class="danger" title="Alle Kontakte löschen">Alles löschen</button>
+      </div>
+    </header>
+
+    <section class="card controls" aria-labelledby="addTitle">
+      <h2 id="addTitle" style="margin:0 0 6px 0">Kontakt hinzufügen</h2>
+      <div class="row">
+        <label> Name
+          <input id="name" placeholder="z. B. Anna Müller" autocomplete="name" required aria-required="true" />
+        </label>
+        <label> Telefon
+          <input id="phone" placeholder="z. B. +49 176 1234567" inputmode="tel" pattern="[0-9 +()\-]{5,}" aria-describedby="phoneHint" required aria-required="true" />
+        </label>
+        <label> Notiz
+          <input id="note" placeholder="z. B. Schule, Arbeit, Familie" />
+        </label>
+        <div style="display:grid; align-content:end">
+          <button id="addBtn">Hinzufügen</button>
+        </div>
+      </div>
+      <div id="phoneHint" style="color:var(--muted); font-size:.9rem">Erlaubt: Ziffern, Leerzeichen, + ( ) -</div>
+    </section>
+
+    <section class="card" style="margin-top:16px">
+      <div style="max-height:60vh; overflow:auto">
+        <table aria-label="Kontaktliste">
+          <thead>
+            <tr>
+              <th><button class="ghost" data-sort="name" title="Nach Name sortieren">Name ⟷</button></th>
+              <th><button class="ghost" data-sort="phone" title="Nach Nummer sortieren">Telefon ⟷</button></th>
+              <th>Notiz</th>
+              <th>Aktionen</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="footer">© <span id="year"></span> Telefonbuch · <a href="#" id="demoFill">Demo-Daten füllen</a></div>
+  </div>
+
+  <script>
+    // --- Utils ---
+    const $ = (sel, root=document) => root.querySelector(sel);
+    const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+    const STORAGE_KEY = 'phonebook_v1';
+
+    const state = {
+      contacts: [],
+      sortBy: 'name',
+      sortDir: 'asc',
+      q: ''
+    };
+
+    function save(){
+      try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state.contacts)); }
+      catch(e){ alert('Konnte nicht speichern: ' + e.message); }
+    }
+    function load(){
+      try{ state.contacts = JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]'); }
+      catch{ state.contacts = []; }
+    }
+
+    function uid(){ return Math.random().toString(36).slice(2,10); }
+
+    function normalize(s){ return (s||'').toLowerCase(); }
+
+    function render(){
+      let list = [...state.contacts];
+      // Filter
+      if(state.q){
+        const q = normalize(state.q);
+        list = list.filter(c => normalize(c.name).includes(q) || normalize(c.phone).includes(q) || normalize(c.note).includes(q));
+      }
+      // Sort
+      list.sort((a,b)=>{
+        const k = state.sortBy;
+        const va = normalize(a[k]);
+        const vb = normalize(b[k]);
+        if(va < vb) return state.sortDir === 'asc' ? -1 : 1;
+        if(va > vb) return state.sortDir === 'asc' ? 1 : -1;
+        return 0;
+      });
+
+      const tbody = $('#tbody');
+      tbody.innerHTML = '';
+      for(const c of list){
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td data-label="Name">${escapeHtml(c.name)}</td>
+          <td data-label="Telefon"><a href="tel:${encodeURIComponent(c.phone)}">${escapeHtml(c.phone)}</a></td>
+          <td data-label="Notiz">${escapeHtml(c.note||'')}</td>
+          <td data-label="Aktionen" class="actions">
+            <button class="ghost" data-act="edit" data-id="${c.id}">Bearbeiten</button>
+            <button class="danger" data-act="del" data-id="${c.id}">Löschen</button>
+          </td>`;
+        tbody.appendChild(tr);
+      }
+    }
+
+    function escapeHtml(s){
+      return (s+"").replace(/[&<>"]+/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+    }
+
+    function addContact(name, phone, note){
+      state.contacts.push({ id: uid(), name: name.trim(), phone: phone.trim(), note: (note||'').trim() });
+      save(); render();
+    }
+
+    function updateContact(id, patch){
+      const i = state.contacts.findIndex(c=>c.id===id);
+      if(i>-1){ state.contacts[i] = {...state.contacts[i], ...patch}; save(); render(); }
+    }
+
+    function deleteContact(id){
+      state.contacts = state.contacts.filter(c=>c.id!==id); save(); render();
+    }
+
+    // --- Events ---
+    function init(){
+      $('#year').textContent = new Date().getFullYear();
+      load(); render();
+
+      // Add
+      $('#addBtn').addEventListener('click', ()=>{
+        const name = $('#name').value;
+        const phone = $('#phone').value;
+        const note = $('#note').value;
+        if(!name.trim()) return alert('Bitte einen Namen eingeben.');
+        if(!phone.trim()) return alert('Bitte eine Telefonnummer eingeben.');
+        addContact(name, phone, note);
+        $('#name').value=''; $('#phone').value=''; $('#note').value='';
+        $('#name').focus();
+      });
+
+      // Search
+      $('#search').addEventListener('input', (e)=>{ state.q = e.target.value; render(); });
+
+      // Sort buttons
+      $$('th button[data-sort]').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          const key = btn.getAttribute('data-sort');
+          if(state.sortBy === key){ state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc'; }
+          else { state.sortBy = key; state.sortDir = 'asc'; }
+          render();
+        });
+      });
+
+      // Actions (edit/delete)
+      $('#tbody').addEventListener('click', (e)=>{
+        const btn = e.target.closest('button');
+        if(!btn) return;
+        const id = btn.getAttribute('data-id');
+        const act = btn.getAttribute('data-act');
+        if(act==='del'){
+          if(confirm('Diesen Kontakt wirklich löschen?')) deleteContact(id);
+        }
+        if(act==='edit'){
+          const c = state.contacts.find(x=>x.id===id);
+          if(!c) return;
+          // Inline-Editor
+          const tr = btn.closest('tr');
+          tr.innerHTML = `
+            <td data-label="Name"><input id="e_name" value="${escapeHtml(c.name)}" /></td>
+            <td data-label="Telefon"><input id="e_phone" value="${escapeHtml(c.phone)}" /></td>
+            <td data-label="Notiz"><input id="e_note" value="${escapeHtml(c.note||'')}" /></td>
+            <td class="actions">
+              <button class="ghost" data-act="save" data-id="${c.id}">Speichern</button>
+              <button class="danger" data-act="cancel" data-id="${c.id}">Abbrechen</button>
+            </td>`;
+        }
+        if(act==='save'){
+          const tr = btn.closest('tr');
+          const name = tr.querySelector('#e_name').value;
+          const phone = tr.querySelector('#e_phone').value;
+          const note = tr.querySelector('#e_note').value;
+          if(!name.trim()||!phone.trim()) return alert('Name und Telefon sind erforderlich.');
+          updateContact(id, {name, phone, note});
+        }
+        if(act==='cancel') render();
+      });
+
+      // Export
+      $('#exportBtn').addEventListener('click', ()=>{
+        const blob = new Blob([JSON.stringify(state.contacts, null, 2)], {type:'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `telefonbuch-${new Date().toISOString().slice(0,10)}.json`;
+        document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      });
+
+      // Import
+      $('#importFile').addEventListener('change', (e)=>{
+        const file = e.target.files && e.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          try{
+            const data = JSON.parse(reader.result);
+            if(!Array.isArray(data)) throw new Error('Ungültiges Format');
+            // leichte Normalisierung
+            const cleaned = data.map(x=>({id: x.id||uid(), name: (x.name||'').toString(), phone:(x.phone||'').toString(), note:(x.note||'').toString()}));
+            state.contacts = cleaned; save(); render();
+            alert('Import erfolgreich.');
+          }catch(err){ alert('Import fehlgeschlagen: '+err.message); }
+          e.target.value = '';
+        };
+        reader.readAsText(file);
+      });
+
+      // Clear all
+      $('#clearBtn').addEventListener('click', ()=>{
+        if(confirm('Wirklich alle Kontakte löschen?')){ state.contacts = []; save(); render(); }
+      });
+
+      // Demo-Daten
+      $('#demoFill').addEventListener('click', (e)=>{
+        e.preventDefault();
+        if(state.contacts.length>0 && !confirm('Vorhandene Kontakte überschreiben?')) return;
+        state.contacts = [
+          {id:uid(), name:'Anna Müller', phone:'+49 176 1234567', note:'Schule'},
+          {id:uid(), name:'Max Schneider', phone:'+49 351 555444', note:'Nachhilfe'},
+          {id:uid(), name:'Freddy Fresh', phone:'+49 351 123456', note:'Pizza 😋'},
+        ];
+        save(); render();
+      });
+
+      // Submit on Enter inside inputs
+      ['name','phone','note'].forEach(id=>{
+        $('#'+id).addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); $('#addBtn').click(); } });
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

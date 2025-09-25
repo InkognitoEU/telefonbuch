@@ -1,70 +1,90 @@
+
 <!doctype html>
 <html lang="de">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Telefonbuch & Notizen</title>
-  <meta name="description" content="Lokales Telefonbuch und Notizblock mit Bild-Upload. Moderne Glass-Optik, animierte Blobs, Sidebar-Navigation. Daten bleiben im Browser (localStorage)." />
+  <title>Dashboard — Telefonbuch · Notizen · Fälle</title>
+  <meta name="description" content="Lokales Dashboard mit Telefonbuch, Notizen und Fallverwaltung. Apple-inspiriertes Design (Glass · Liquid Buttons · sanfte, federnde Animationen)." />
   <link rel="icon" href="data:;base64,iVBORw0KGgo=" />
   <style>
-    /* ===== Theme: soft glass + blobs, robust CSS with reduced-motion support ===== */
+    /* =========================================================
+       Apple-inspiriertes UI · Liquid/Glass · sanfte Feder-Animationen
+       ========================================================= */
     :root{
-      --bg1:#0b0f1a; --bg2:#070a12; --glass:rgba(255,255,255,0.08);
-      --border:rgba(255,255,255,0.15); --text:#e9eef6; --muted:#a5b1c2;
-      --accent:#6ee7f9; --accent2:#a78bfa; --ok:#22c55e; --danger:#ef4444;
-      --radius:18px; --gap:14px; --maxw:1200px;
+      --bg:#06080f; --bg2:#0a0f1d; --glass:rgba(255,255,255,.08); --glass2:rgba(255,255,255,.06);
+      --border:rgba(255,255,255,.16); --text:#eaf0f7; --muted:#9aa7b7;
+      --accent:#7dd3fc; --accent2:#c4b5fd; --ok:#22c55e; --danger:#ef4444; --warn:#f59e0b;
+      --radius:20px; --gap:14px; --maxw:1280px;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{margin:0; font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial; color:var(--text); background:linear-gradient(180deg,var(--bg1),var(--bg2)); overflow-x:hidden}
+    body{margin:0; font-family:Inter, ui-sans-serif, system-ui, -apple-system, "SF Pro Text", "Segoe UI", Roboto, Arial; color:var(--text);
+      background: radial-gradient(1200px 800px at 10% 10%, #0d1429 0%, #070b16 55%, #050811 100%); overflow-x:hidden}
 
-    /* Animated background blobs */
-    .blob{position:fixed; filter:blur(40px); opacity:.55; z-index:-2; animation:float 18s ease-in-out infinite}
-    .b1{top:-120px; left:-120px; width:480px; height:480px; background:radial-gradient(circle at 30% 30%, var(--accent), transparent 60%)}
-    .b2{bottom:-140px; right:-160px; width:520px; height:520px; background:radial-gradient(circle at 70% 70%, var(--accent2), transparent 60%); animation-delay:-7s}
-    .b3{top:40%; left:60%; width:360px; height:360px; background:radial-gradient(circle at 40% 60%, #34d399, transparent 60%); animation-delay:-3s}
-    @keyframes float{0%,100%{transform:translateY(0) translateX(0) scale(1);}50%{transform:translateY(-24px) translateX(14px) scale(1.04);}}
+    /* ===== Animated background blobs ===== */
+    .blob{position:fixed; filter:blur(42px); opacity:.55; z-index:-2; animation:float 20s ease-in-out infinite}
+    .b1{top:-140px; left:-160px; width:520px; height:520px; background:radial-gradient(circle at 30% 30%, var(--accent), transparent 60%)}
+    .b2{bottom:-160px; right:-220px; width:600px; height:600px; background:radial-gradient(circle at 70% 70%, var(--accent2), transparent 60%); animation-delay:-7s}
+    .b3{top:40%; left:60%; width:380px; height:380px; background:radial-gradient(circle at 40% 60%, #34d399, transparent 60%); animation-delay:-3s}
+    @keyframes float{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(16px,-26px) scale(1.05)}}
     @media (prefers-reduced-motion: reduce){ .blob{animation:none} }
 
-    /* Layout */
-    .app{display:grid; grid-template-columns:280px 1fr; min-height:100dvh}
-    @media (max-width:960px){ .app{grid-template-columns:1fr} }
+    /* ===== Gooey filter for liquid buttons ===== */
+    svg#goo{position:absolute; width:0; height:0}
 
-    /* Sidebar */
-    .sidebar{position:sticky; top:0; align-self:start; height:100dvh; padding:18px; backdrop-filter:blur(16px) saturate(120%); -webkit-backdrop-filter:blur(16px) saturate(120%); background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03)); border-right:1px solid var(--border)}
-    .brand{display:flex; gap:12px; align-items:center; margin-bottom:14px}
-    .logo{width:44px; height:44px; border-radius:14px; background:linear-gradient(135deg,var(--accent),var(--accent2)); display:grid; place-items:center; color:#0b0f1a; font-weight:900; box-shadow:0 8px 24px rgba(167,139,250,.35)}
-    .brand h1{margin:0; font-size:1.2rem}
+    /* ===== Layout ===== */
+    .app{display:grid; grid-template-columns:300px 1fr; min-height:100dvh}
+    @media (max-width:1024px){ .app{grid-template-columns:1fr} }
 
-    .nav{display:grid; gap:8px; margin-top:10px}
-    .nav button{all:unset; display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px; cursor:pointer; color:var(--text); border:1px solid transparent}
-    .nav button:hover{background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.12)}
-    .nav button.active{background:linear-gradient(135deg, rgba(110,231,249,.16), rgba(167,139,250,.16)); border-color:rgba(255,255,255,.18)}
+    /* ===== Sidebar & Hamburger ===== */
+    .hamburger{display:none; position:fixed; top:14px; left:14px; z-index:10; width:46px; height:46px; border-radius:14px; border:1px solid var(--border); background:var(--glass2); backdrop-filter:blur(12px); cursor:pointer}
+    .hamburger span, .hamburger::before, .hamburger::after{content:""; position:absolute; left:12px; right:12px; height:2px; background:#eaf0f7; border-radius:2px; transition:.24s cubic-bezier(.2,.9,.2,1)}
+    .hamburger span{top:22px}
+    .hamburger::before{top:14px}
+    .hamburger::after{top:30px}
+    @media (max-width:1024px){ .hamburger{display:block} }
 
-    /* Hamburger (3 lines) */
-    .hamburger{display:none; position:fixed; top:14px; left:14px; z-index:10; width:44px; height:44px; border-radius:12px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06); backdrop-filter:blur(10px); cursor:pointer}
-    .hamburger span, .hamburger::before, .hamburger::after{content:""; position:absolute; left:10px; right:10px; height:2px; background:#e9eef6; border-radius:2px; transition:.2s}
-    .hamburger span{top:21px}
-    .hamburger::before{top:13px}
-    .hamburger::after{top:29px}
-    @media (max-width:960px){ .hamburger{display:block} .sidebar{position:fixed; left:-100%; top:0; width:min(300px,90vw); transition:left .25s ease} .sidebar.open{left:0} .app{grid-template-columns:1fr} }
+    .sidebar{position:sticky; top:0; align-self:start; height:100dvh; padding:18px; backdrop-filter:blur(18px) saturate(120%); -webkit-backdrop-filter:blur(18px) saturate(120%);
+      background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.03)); border-right:1px solid var(--border);}
+    .brand{display:flex; gap:12px; align-items:center; margin-bottom:16px}
+    .logo{width:46px; height:46px; border-radius:16px; background:linear-gradient(135deg,var(--accent),var(--accent2)); display:grid; place-items:center; color:#0b0f1a; font-weight:900; box-shadow:0 8px 24px rgba(167,139,250,.35)}
+    .brand h1{margin:0; font-size:1.24rem}
 
-    /* Main */
+    .nav{display:grid; gap:10px; margin-top:12px}
+    .nav button{all:unset; display:flex; align-items:center; gap:10px; padding:12px 14px; border-radius:14px; cursor:pointer; color:var(--text); border:1px solid transparent}
+    .nav button:hover{background:rgba(255,255,255,.07); border-color:rgba(255,255,255,.12)}
+    .nav button.active{background:linear-gradient(135deg, rgba(125,211,252,.16), rgba(196,181,253,.16)); border-color:rgba(255,255,255,.18)}
+
+    @media (max-width:1024px){
+      .sidebar{position:fixed; left:-100%; width:min(320px,90vw); transition:left .26s cubic-bezier(.2,.9,.2,1); box-shadow:0 16px 40px rgba(0,0,0,.5)}
+      .sidebar.open{left:0}
+      .app{grid-template-columns:1fr}
+    }
+
     .main{padding:24px; max-width:var(--maxw); width:100%; margin:0 auto}
     .glass{background:var(--glass); border:1px solid var(--border); border-radius:var(--radius); backdrop-filter: blur(18px) saturate(120%); -webkit-backdrop-filter: blur(18px) saturate(120%); box-shadow: 0 10px 30px rgba(0,0,0,.35)}
     .section{padding:16px; margin-bottom:16px}
 
     input, button, textarea{font:inherit}
     input[type="search"], input[type="text"], input[type="tel"], textarea{
-      background:rgba(255,255,255,.07); color:var(--text); border:1px solid rgba(255,255,255,.14); border-radius:12px; padding:10px 12px; outline:none
+      background:rgba(255,255,255,.07); color:var(--text); border:1px solid rgba(255,255,255,.14); border-radius:14px; padding:12px 14px; outline:none
     }
-    input:focus, textarea:focus{border-color:var(--accent); box-shadow:0 0 0 3px rgba(110,231,249,.18)}
+    input:focus, textarea:focus{border-color:var(--accent); box-shadow:0 0 0 4px rgba(125,211,252,.18)}
     textarea{min-height:120px; resize:vertical}
 
-    button{background:linear-gradient(135deg, rgba(110,231,249,.15), rgba(167,139,250,.15)); color:var(--text); border:1px solid rgba(255,255,255,.14); border-radius:12px; padding:10px 12px; cursor:pointer; transition:transform .06s ease, box-shadow .2s ease}
-    button:hover{transform:translateY(-1px); box-shadow:0 10px 20px rgba(0,0,0,.3)}
-    button.primary{background:linear-gradient(135deg, var(--accent), var(--accent2)); color:#0b0f1a; border:none; font-weight:800}
-    button.danger{background:linear-gradient(135deg, rgba(239,68,68,.15), rgba(239,68,68,.25)); color:#fecaca; border:1px solid rgba(239,68,68,.35)}
+    /* ===== Liquid (gooey) buttons ===== */
+    .btn{display:inline-grid; place-items:center; padding:12px 16px; border-radius:999px; color:#0b0f1a; font-weight:800; cursor:pointer; user-select:none; border:none; position:relative; isolation:isolate}
+    .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));}
+    .btn.ghost{background:transparent; color:var(--text); border:1px solid rgba(255,255,255,.14)}
+    .btn.danger{background:linear-gradient(135deg, rgba(239,68,68,.85), rgba(239,68,68,.65)); color:#fee2e2}
+    .btn::after{content:""; position:absolute; inset:-6px; border-radius:999px; background:radial-gradient(22px 22px at 30% 30%, rgba(255,255,255,.45), transparent 60%); filter:blur(12px); opacity:.0; transition:opacity .3s}
+    .btn:hover::after{opacity:.8}
+    .btn{transition:transform .22s cubic-bezier(.2,1.2,.2,1), filter .2s;}
+    .btn:active{transform:scale(.97)}
+
+    /* Toolbar pills */
+    .pill{padding:8px 12px; border-radius:999px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14)}
 
     .row{display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:var(--gap)}
     @media (max-width:900px){ .row{grid-template-columns:1fr 1fr} }
@@ -73,6 +93,7 @@
     table{width:100%; border-collapse:separate; border-spacing:0}
     thead th{position:sticky; top:0; background:rgba(10,14,22,.6); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); z-index:1}
     th, td{padding:12px 10px; text-align:left; border-bottom:1px solid rgba(255,255,255,.06)}
+    tbody tr{transition:background .15s}
     tbody tr:hover{background:rgba(255,255,255,.04)}
     .actions{display:flex; gap:8px}
 
@@ -80,14 +101,33 @@
     .hidden{display:none !important}
 
     /* Subtle appear animation */
-    .fade-in{animation:fade .28s ease}
-    @keyframes fade{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:translateY(0)}}
+    .fade-in{animation:fade .34s cubic-bezier(.2,.9,.2,1)}
+    @keyframes fade{from{opacity:0; transform:translateY(8px) scale(.995)} to{opacity:1; transform:translateY(0) scale(1)}}
+
+    /* ===== Splash (Willkommen) ===== */
+    .splash{position:fixed; inset:0; display:grid; place-items:center; background:radial-gradient(1400px 900px at 50% 40%, #0c1224 0%, #06080f 70%); z-index:50}
+    .splash .box{text-align:center}
+    .splash h2{margin:0; font-size:clamp(1.6rem,4vw,2.6rem)}
+    .splash.fadeout{animation:splashout .7s cubic-bezier(.2,1,.2,1) forwards}
+    @keyframes splashout{to{opacity:0; transform:scale(1.02); visibility:hidden}}
   </style>
 </head>
 <body>
+  <!-- background blobs -->
   <div class="blob b1"></div>
   <div class="blob b2"></div>
   <div class="blob b3"></div>
+
+  <!-- gooey filter for liquid buttons -->
+  <svg id="goo" xmlns="http://www.w3.org/2000/svg"><defs><filter id="gooey"><feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur"/><feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" result="goo"/><feBlend in="SourceGraphic" in2="goo"/></filter></defs></svg>
+
+  <!-- Splash welcome -->
+  <div class="splash" id="splash">
+    <div class="box">
+      <h2>Willkommen</h2>
+      <div class="muted">Lädt Oberfläche…</div>
+    </div>
+  </div>
 
   <button class="hamburger" id="hamburger" aria-label="Menü öffnen"><span></span></button>
 
@@ -95,15 +135,16 @@
     <!-- Sidebar -->
     <aside class="sidebar glass" id="sidebar" aria-label="Navigation">
       <div class="brand">
-        <div class="logo">TB</div>
+        <div class="logo">DB</div>
         <div>
-          <h1>Telefonbuch & Notizen</h1>
-          <div class="muted">Daten bleiben im Browser (localStorage)</div>
+          <h1>Dashboard</h1>
+          <div class="muted">Lokal gespeichert (localStorage)</div>
         </div>
       </div>
       <nav class="nav" id="nav">
         <button data-page="contacts" class="active">📇 Telefonbuch</button>
         <button data-page="notes">🗒️ Notizen</button>
+        <button data-page="cases">🕵️‍♂️ Fälle</button>
       </nav>
     </aside>
 
@@ -114,14 +155,14 @@
         <header class="glass section" style="display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap">
           <div style="display:flex; gap:10px; align-items:center">
             <input id="search" type="search" placeholder="Suche: Name, Nummer, Notiz…" aria-label="Suche" />
-            <span class="muted">Sortiere:</span>
-            <button class="glass" data-sort="name" title="Nach Name sortieren">Name ⟷</button>
-            <button class="glass" data-sort="phone" title="Nach Nummer sortieren">Telefon ⟷</button>
+            <span class="pill">Sortieren</span>
+            <button class="btn ghost" data-sort="name" title="Nach Name sortieren">Name</button>
+            <button class="btn ghost" data-sort="phone" title="Nach Nummer sortieren">Telefon</button>
           </div>
-          <div style="display:flex; gap:10px">
-            <button id="exportContacts" title="Export als JSON">Export</button>
-            <label for="importContactsFile"><input id="importContactsFile" type="file" accept="application/json" class="hidden" /><button id="importContacts">Import</button></label>
-            <button id="clearContacts" class="danger" title="Alle Einträge löschen">Alles löschen</button>
+          <div style="display:flex; gap:10px; filter:url(#gooey)">
+            <button id="exportContacts" class="btn primary" title="Export JSON">Export</button>
+            <label for="importContactsFile" style="display:inline-grid"><input id="importContactsFile" type="file" accept="application/json" class="hidden" /><button id="importContacts" class="btn primary">Import</button></label>
+            <button id="clearContacts" class="btn danger" title="Alle Einträge löschen">Alles löschen</button>
           </div>
         </header>
 
@@ -131,7 +172,7 @@
             <label> Name <input id="name" placeholder="Anna Müller" autocomplete="name" /></label>
             <label> Telefon <input id="phone" placeholder="+49 176 1234567" inputmode="tel" /></label>
             <label> Notiz <input id="note" placeholder="z. B. Schule" /></label>
-            <div style="display:grid;align-content:end"><button id="addContact" class="primary">Hinzufügen</button></div>
+            <div style="display:grid;align-content:end"><button id="addContact" class="btn primary">Hinzufügen</button></div>
           </div>
         </section>
 
@@ -152,7 +193,7 @@
           <div class="row" style="grid-template-columns:1fr 1fr auto">
             <label>Titel <input id="noteTitle" placeholder="z. B. Einkaufsliste" /></label>
             <label>Tags <input id="noteTags" placeholder="z. B. Schule, Projekt" /></label>
-            <div style="display:grid;align-content:end"><button id="addNote" class="primary">Speichern</button></div>
+            <div style="display:grid;align-content:end"><button id="addNote" class="btn primary">Speichern</button></div>
           </div>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--gap); margin-top:var(--gap)">
             <label style="display:block">Bild (optional)
@@ -162,7 +203,7 @@
               <textarea id="noteText" placeholder="Schreibe deine Notiz…"></textarea>
             </label>
           </div>
-          <div class="muted" style="margin-top:6px">Hinweis: Bilder werden lokal als Data-URL gespeichert. Große Bilder → Datei wird größer.</div>
+          <div class="muted" style="margin-top:6px">Hinweis: Bilder werden lokal als Data-URL gespeichert.</div>
         </section>
 
         <section class="glass section" style="overflow:auto; max-height:60vh">
@@ -174,187 +215,140 @@
           </table>
         </section>
       </section>
+
+      <!-- Cases Page (KriPo) -->
+      <section id="page-cases" class="hidden fade-in">
+        <section class="glass section">
+          <h2 style="margin:0 0 8px 0">Neuer Fall</h2>
+          <div class="row" style="grid-template-columns:1fr 1fr 1fr auto">
+            <label>Titel <input id="caseTitle" placeholder="z. B. Diebstahl im Park" /></label>
+            <label>Aktenzeichen <input id="caseNumber" placeholder="z. B. 2025-001" /></label>
+            <label>Status <input id="caseStatus" placeholder="z. B. offen/erledigt" /></label>
+            <div style="display:grid;align-content:end"><button id="addCase" class="btn primary">Anlegen</button></div>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--gap); margin-top:var(--gap)">
+            <label>Personen/Beteiligte <input id="casePeople" placeholder="Namen, Rollen" /></label>
+            <label>Tags <input id="caseTags" placeholder="Tatort, Kategorie…" /></label>
+          </div>
+          <div style="margin-top:var(--gap)">
+            <label>Beschreibung
+              <textarea id="caseDesc" placeholder="Kurzbeschreibung des Falls…"></textarea>
+            </label>
+          </div>
+        </section>
+
+        <section class="glass section" style="overflow:auto; max-height:60vh">
+          <table aria-label="Fälle">
+            <thead>
+              <tr><th>Aktenzeichen</th><th>Titel</th><th>Status</th><th>Aktionen</th></tr>
+            </thead>
+            <tbody id="casesBody"></tbody>
+          </table>
+        </section>
+      </section>
     </main>
   </div>
 
   <script>
-    // ===== State & helpers =====
+    // ===== Helpers & storage =====
     const $ = (s,r=document)=>r.querySelector(s);
     const $$ = (s,r=document)=>Array.from(r.querySelectorAll(s));
-    const STORE_CONTACTS = 'app_contacts_v2';
-    const STORE_NOTES = 'app_notes_v2';
-
-    const state = {
-      contacts: [], notes: [],
-      sortBy: 'name', sortDir: 'asc', q: ''
-    };
-
-    const uid = () => Math.random().toString(36).slice(2,10);
+    const uid = ()=>Math.random().toString(36).slice(2,10);
     const escapeHtml = s => (s+'').replace(/[&<>"']/g, ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
 
-    function save(){
-      try{ localStorage.setItem(STORE_CONTACTS, JSON.stringify(state.contacts)); }catch(e){ alert('Kontakte nicht gespeichert: '+e.message); }
-      try{ localStorage.setItem(STORE_NOTES, JSON.stringify(state.notes)); }catch(e){ alert('Notizen nicht gespeichert: '+e.message); }
-    }
-    function load(){
-      try{ state.contacts = JSON.parse(localStorage.getItem(STORE_CONTACTS)||'[]'); }catch(e){ state.contacts = []; }
-      try{ state.notes = JSON.parse(localStorage.getItem(STORE_NOTES)||'[]'); }catch(e){ state.notes = []; }
-    }
+    const STORE_CONTACTS='ui_contacts_v3';
+    const STORE_NOTES='ui_notes_v3';
+    const STORE_CASES='ui_cases_v1';
 
-    // ===== UI: Navigation =====
+    const state={contacts:[], notes:[], cases:[], sortBy:'name', sortDir:'asc', q:''};
+
+    const save=()=>{ try{localStorage.setItem(STORE_CONTACTS,JSON.stringify(state.contacts))}catch{}; try{localStorage.setItem(STORE_NOTES,JSON.stringify(state.notes))}catch{}; try{localStorage.setItem(STORE_CASES,JSON.stringify(state.cases))}catch{} };
+    const load=()=>{ try{state.contacts=JSON.parse(localStorage.getItem(STORE_CONTACTS)||'[]')}catch{}; try{state.notes=JSON.parse(localStorage.getItem(STORE_NOTES)||'[]')}catch{}; try{state.cases=JSON.parse(localStorage.getItem(STORE_CASES)||'[]')}catch{} };
+
+    // ===== Navigation + Splash =====
     function switchPage(page){
       $$('#nav button').forEach(b=>b.classList.toggle('active', b.dataset.page===page));
       $('#page-contacts').classList.toggle('hidden', page!=='contacts');
       $('#page-notes').classList.toggle('hidden', page!=='notes');
-      if(window.matchMedia('(max-width: 960px)').matches){ $('#sidebar').classList.remove('open'); }
+      $('#page-cases').classList.toggle('hidden', page!=='cases');
+      if(matchMedia('(max-width:1024px)').matches) $('#sidebar').classList.remove('open');
     }
+
+    function hideSplash(){ const s=$('#splash'); s.classList.add('fadeout'); setTimeout(()=>s.remove(), 700); }
 
     // ===== Contacts =====
     function renderContacts(){
-      let list = [...state.contacts];
-      if(state.q){ const q = state.q.toLowerCase(); list = list.filter(c => (c.name||'').toLowerCase().includes(q) || (c.phone||'').toLowerCase().includes(q) || (c.note||'').toLowerCase().includes(q)); }
-      list.sort((a,b)=>{ const k=state.sortBy; const A=(a[k]||'').toLowerCase(); const B=(b[k]||'').toLowerCase(); if(A<B) return state.sortDir==='asc'? -1:1; if(A>B) return state.sortDir==='asc'? 1:-1; return 0;});
-
-      const tbody = $('#contactsBody'); tbody.innerHTML='';
+      let list=[...state.contacts];
+      if(state.q){ const q=state.q.toLowerCase(); list=list.filter(c=>(c.name||'').toLowerCase().includes(q)||(c.phone||'').toLowerCase().includes(q)||(c.note||'').toLowerCase().includes(q)); }
+      list.sort((a,b)=>{ const k=state.sortBy; const A=(a[k]||'').toLowerCase(); const B=(b[k]||'').toLowerCase(); if(A<B)return state.sortDir==='asc'?-1:1; if(A>B)return state.sortDir==='asc'?1:-1; return 0;});
+      const tbody=$('#contactsBody'); tbody.innerHTML='';
       for(const c of list){
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td data-label="Name">${escapeHtml(c.name)}</td>
-          <td data-label="Telefon"><a href="tel:${encodeURIComponent(c.phone)}" style="color:var(--accent)">${escapeHtml(c.phone)}</a></td>
-          <td data-label="Notiz">${escapeHtml(c.note||'')}</td>
+        const tr=document.createElement('tr');
+        tr.innerHTML=`
+          <td>${escapeHtml(c.name)}</td>
+          <td><a href="tel:${encodeURIComponent(c.phone)}" style="color:var(--accent)">${escapeHtml(c.phone)}</a></td>
+          <td>${escapeHtml(c.note||'')}</td>
           <td class="actions">
-            <button data-act="edit" data-id="${c.id}">Bearbeiten</button>
-            <button data-act="del" data-id="${c.id}" class="danger">Löschen</button>
+            <button class="btn ghost" data-act="edit" data-id="${c.id}">Bearbeiten</button>
+            <button class="btn danger" data-act="del" data-id="${c.id}">Löschen</button>
           </td>`;
         tbody.appendChild(tr);
       }
     }
-
-    function addContact(name, phone, note){ state.contacts.push({id:uid(), name:name.trim(), phone:phone.trim(), note:(note||'').trim()}); save(); renderContacts(); }
-    function updateContact(id, patch){ const i = state.contacts.findIndex(x=>x.id===id); if(i>-1){ state.contacts[i] = {...state.contacts[i], ...patch}; save(); renderContacts(); }}
-    function deleteContact(id){ state.contacts = state.contacts.filter(x=>x.id!==id); save(); renderContacts(); }
+    function addContact(n,p,nt){ state.contacts.push({id:uid(),name:n.trim(),phone:p.trim(),note:(nt||'').trim()}); save(); renderContacts(); }
+    function updateContact(id,patch){ const i=state.contacts.findIndex(x=>x.id===id); if(i>-1){ state.contacts[i]={...state.contacts[i],...patch}; save(); renderContacts(); }}
+    function deleteContact(id){ state.contacts=state.contacts.filter(x=>x.id!==id); save(); renderContacts(); }
 
     // ===== Notes =====
-    function renderNotes(){
-      const tbody = $('#notesBody'); tbody.innerHTML = '';
-      for(const n of state.notes){
-        const tr = document.createElement('tr');
-        const thumb = n.image ? `<img src="${n.image}" alt="Notizbild" style="width:64px;height:64px;object-fit:cover;border-radius:10px;border:1px solid rgba(255,255,255,.18)"/>` : '<span class="muted">–</span>';
-        tr.innerHTML = `
-          <td>${escapeHtml(n.title||'Ohne Titel')}</td>
-          <td>${escapeHtml(n.tags||'')}</td>
-          <td>${thumb}</td>
-          <td class="actions">
-            <button data-act="open" data-id="${n.id}">Öffnen</button>
-            <button data-act="del-note" data-id="${n.id}" class="danger">Löschen</button>
-          </td>`;
-        tbody.appendChild(tr);
-      }
-    }
+    function renderNotes(){ const tbody=$('#notesBody'); tbody.innerHTML=''; for(const n of state.notes){ const tr=document.createElement('tr'); const thumb=n.image?`<img src="${n.image}" alt="Bild" style="width:64px;height:64px;object-fit:cover;border-radius:12px;border:1px solid var(--border)"/>`:'<span class="muted">–</span>'; tr.innerHTML=`<td>${escapeHtml(n.title||'Ohne Titel')}</td><td>${escapeHtml(n.tags||'')}</td><td>${thumb}</td><td class="actions"><button class="btn ghost" data-act="open" data-id="${n.id}">Öffnen</button><button class="btn danger" data-act="del-note" data-id="${n.id}">Löschen</button></td>`; tbody.appendChild(tr);} }
+    function addNote(note){ state.notes.unshift({id:uid(),...note}); save(); renderNotes(); }
+    function deleteNote(id){ state.notes=state.notes.filter(x=>x.id!==id); save(); renderNotes(); }
 
-    function addNote(note){ state.notes.unshift({id:uid(), ...note}); save(); renderNotes(); }
-    function deleteNote(id){ state.notes = state.notes.filter(x=>x.id!==id); save(); renderNotes(); }
+    function openNoteModal(n){ const modal=document.createElement('div'); modal.className='glass fade-in'; modal.style.cssText='position:fixed;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.35);padding:20px;z-index:40'; const box=document.createElement('div'); box.className='glass'; box.style.cssText='max-width:920px;width:95vw;border-radius:20px;padding:18px;'; box.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h3 style="margin:0">${escapeHtml(n.title||'Ohne Titel')}</h3><button id="closeModal" class="btn ghost">Schließen</button></div><div class="muted" style="margin:.25rem 0">${escapeHtml(n.tags||'')}</div><div style="display:grid;grid-template-columns:300px 1fr;gap:14px;margin-top:12px"><div>${n.image?`<img src="${n.image}" alt="Bild" style="width:100%;border-radius:16px;border:1px solid var(--border);object-fit:cover"/>`:'<div class="muted">Kein Bild</div>'}</div><div style="white-space:pre-wrap">${escapeHtml(n.text||'')}</div></div>`; modal.appendChild(box); modal.addEventListener('click',e=>{ if(e.target===modal||e.target.id==='closeModal') modal.remove();}); document.body.appendChild(modal); }
 
-    function openNoteModal(n){
-      const modal = document.createElement('div');
-      modal.className = 'glass fade-in';
-      modal.style.cssText = 'position:fixed;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.35);padding:20px;z-index:20';
-      const box = document.createElement('div');
-      box.className = 'glass';
-      box.style.cssText = 'max-width:860px;width:95vw;border-radius:18px;padding:16px;'
-      box.innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
-          <h3 style="margin:0">${escapeHtml(n.title||'Ohne Titel')}</h3>
-          <button id="closeModal">Schließen</button>
-        </div>
-        <div class="muted" style="margin:.25rem 0">${escapeHtml(n.tags||'')}</div>
-        <div style="display:grid;grid-template-columns:280px 1fr;gap:14px;margin-top:12px">
-          <div>${n.image ? `<img src="${n.image}" alt="Bild" style="width:100%;border-radius:14px;border:1px solid rgba(255,255,255,.18);object-fit:cover"/>` : '<div class="muted">Kein Bild</div>'}</div>
-          <div style="white-space:pre-wrap">${escapeHtml(n.text||'')}</div>
-        </div>`;
-      modal.appendChild(box);
-      modal.addEventListener('click', (e)=>{ if(e.target===modal || e.target.id==='closeModal'){ modal.remove(); } });
+    // ===== Cases (KriPo-Seite) =====
+    function renderCases(){ const tbody=$('#casesBody'); tbody.innerHTML=''; for(const c of state.cases){ const tr=document.createElement('tr'); tr.innerHTML=`<td>${escapeHtml(c.number||'—')}</td><td>${escapeHtml(c.title||'')}</td><td>${escapeHtml(c.status||'')}</td><td class="actions"><button class="btn ghost" data-act="open-case" data-id="${c.id}">Öffnen</button><button class="btn danger" data-act="del-case" data-id="${c.id}">Löschen</button></td>`; tbody.appendChild(tr);} }
+    function addCase(obj){ state.cases.unshift({id:uid(), ...obj, interrogations:[], images:[]}); save(); renderCases(); }
+    function deleteCase(id){ state.cases=state.cases.filter(x=>x.id!==id); save(); renderCases(); }
+
+    function openCaseModal(c){ const modal=document.createElement('div'); modal.className='glass fade-in'; modal.style.cssText='position:fixed;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.35);padding:20px;z-index:40'; const box=document.createElement('div'); box.className='glass'; box.style.cssText='max-width:1000px;width:96vw;border-radius:20px;padding:18px;'; box.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">${escapeHtml(c.title)} <span class="pill" style="margin-left:8px">${escapeHtml(c.number)}</span></h3><button id="closeCase" class="btn ghost">Schließen</button></div><div class="muted" style="margin:.3rem 0">Status: ${escapeHtml(c.status||'—')} · Tags: ${escapeHtml(c.tags||'—')}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px"><div><h4>Beteiligte</h4><div class="glass" style="padding:10px;border-radius:14px">${escapeHtml(c.people||'—')}</div><h4 style="margin-top:12px">Beschreibung</h4><div class="glass" style="padding:10px;border-radius:14px;white-space:pre-wrap">${escapeHtml(c.desc||'—')}</div></div><div><h4>Verhöre</h4><div id="interroList" class="glass" style="padding:10px;border-radius:14px;max-height:220px;overflow:auto">${(c.interrogations||[]).map(x=>`<div style='border-bottom:1px solid rgba(255,255,255,.08);padding:6px 0'><strong>${escapeHtml(x.when)}</strong><div style='white-space:pre-wrap'>${escapeHtml(x.text)}</div></div>`).join('') || '<div class="muted">Keine Einträge</div>'}</div><div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:10px"><input id="interroText" placeholder="Verhörnotiz…"/><button id="addInterro" class="btn primary">Hinzufügen</button></div><h4 style="margin-top:12px">Bilder</h4><div id="imgWrap" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px">${(c.images||[]).map(u=>`<img src='${u}' alt='Bild' style='width:100%;height:90px;object-fit:cover;border-radius:12px;border:1px solid var(--border)'/>`).join('')}</div><label class="btn primary" style="margin-top:8px;display:inline-grid"><input id="caseImgInput" type="file" accept="image/*" class="hidden"/>Bild hochladen</label></div></div>`; modal.appendChild(box);
+      modal.addEventListener('click',e=>{ if(e.target===modal||e.target.id==='closeCase'){ modal.remove(); }});
+      box.querySelector('#addInterro').addEventListener('click',()=>{ const t=box.querySelector('#interroText').value.trim(); if(!t) return; const entry={when:new Date().toLocaleString(), text:t}; c.interrogations.unshift(entry); save(); openCaseModalReplace(modal, c); });
+      box.querySelector('#caseImgInput').addEventListener('change', async (e)=>{ const f=e.target.files&&e.target.files[0]; if(!f) return; const url=await readAsDataURL(f); (c.images||(c.images=[])).push(url); save(); openCaseModalReplace(modal, c); });
       document.body.appendChild(modal);
     }
+    function openCaseModalReplace(modal,c){ modal.remove(); openCaseModal(c); renderCases(); }
 
-    // ===== File helpers =====
-    function readImageAsDataURL(file){
-      return new Promise((res, rej)=>{ const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(file); });
-    }
+    const readAsDataURL=(file)=>new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); });
 
     // ===== Init =====
     function init(){
-      load();
-      renderContacts();
-      renderNotes();
+      load(); renderContacts(); renderNotes(); renderCases();
+      setTimeout(hideSplash, 700);
 
-      // Sidebar toggle
-      $('#hamburger').addEventListener('click', ()=>{ $('#sidebar').classList.toggle('open'); });
-      $$('#nav button').forEach(btn=> btn.addEventListener('click', ()=> switchPage(btn.dataset.page)) );
+      // Sidebar
+      $('#hamburger').addEventListener('click',()=>$('#sidebar').classList.toggle('open'));
+      $$('#nav button').forEach(btn=>btn.addEventListener('click',()=>switchPage(btn.dataset.page)));
 
       // Contacts events
-      $('#addContact').addEventListener('click', ()=>{
-        const name = $('#name').value; const phone = $('#phone').value; const note = $('#note').value;
-        if(!name.trim()) return alert('Bitte Namen eingeben.');
-        if(!phone.trim()) return alert('Bitte Telefonnummer eingeben.');
-        addContact(name, phone, note);
-        $('#name').value=''; $('#phone').value=''; $('#note').value=''; $('#name').focus();
-      });
-
-      $('#search').addEventListener('input', (e)=>{ state.q = e.target.value; renderContacts(); });
-      $$('button[data-sort]').forEach(b=> b.addEventListener('click', ()=>{ const key=b.dataset.sort; if(state.sortBy===key){ state.sortDir = state.sortDir==='asc'?'desc':'asc'; } else { state.sortBy=key; state.sortDir='asc'; } renderContacts(); }));
-
-      $('#contactsBody').addEventListener('click', (e)=>{
-        const btn = e.target.closest('button'); if(!btn) return; const id = btn.dataset.id; const act = btn.dataset.act; const c = state.contacts.find(x=>x.id===id); if(!c) return;
-        if(act==='del'){ if(confirm('Diesen Kontakt löschen?')) deleteContact(id); }
-        if(act==='edit'){
-          const tr = btn.closest('tr');
-          tr.innerHTML = `
-            <td><input id=\"e_name\" value=\"${escapeHtml(c.name)}\" /></td>
-            <td><input id=\"e_phone\" value=\"${escapeHtml(c.phone)}\" /></td>
-            <td><input id=\"e_note\" value=\"${escapeHtml(c.note||'')}\" /></td>
-            <td class=\"actions\"><button data-act=\"save\" data-id=\"${c.id}\">Speichern</button> <button data-act=\"cancel\" class=\"danger\">Abbrechen</button></td>`;
-        }
-        if(act==='save'){
-          const tr = btn.closest('tr'); const name = tr.querySelector('#e_name').value; const phone = tr.querySelector('#e_phone').value; const note = tr.querySelector('#e_note').value;
-          if(!name.trim()||!phone.trim()) return alert('Name und Telefon erforderlich.'); updateContact(id,{name,phone,note});
-        }
-        if(act==='cancel') renderContacts();
-      });
-
-      // Contacts import/export
-      $('#exportContacts').addEventListener('click', ()=>{
-        const blob = new Blob([JSON.stringify(state.contacts, null, 2)], {type:'application/json'});
-        const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download = `contacts-${new Date().toISOString().slice(0,10)}.json`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-      });
-      $('#importContacts').addEventListener('click', ()=> $('#importContactsFile').click());
-      $('#importContactsFile').addEventListener('change', async (e)=>{
-        const f = e.target.files && e.target.files[0]; if(!f) return; const text = await f.text();
-        try{ const data = JSON.parse(text); if(!Array.isArray(data)) throw new Error('Ungültiges Format'); data.forEach(x=> state.contacts.push({id:uid(), name:x.name||'', phone:x.phone||'', note:x.note||''})); save(); renderContacts(); alert('Import fertig.'); }catch(err){ alert('Import fehlgeschlagen: '+err.message); }
-        e.target.value='';
-      });
+      $('#addContact').addEventListener('click',()=>{ const n=$('#name').value, p=$('#phone').value, nt=$('#note').value; if(!n.trim()) return alert('Bitte Namen eingeben.'); if(!p.trim()) return alert('Bitte Telefonnummer eingeben.'); addContact(n,p,nt); $('#name').value=$('#phone').value=$('#note').value=''; $('#name').focus(); });
+      $('#search').addEventListener('input',e=>{ state.q=e.target.value; renderContacts(); });
+      $$('button[data-sort]').forEach(b=>b.addEventListener('click',()=>{ const k=b.dataset.sort; if(state.sortBy===k) state.sortDir=state.sortDir==='asc'?'desc':'asc'; else{ state.sortBy=k; state.sortDir='asc'; } renderContacts(); }));
+      $('#contactsBody').addEventListener('click',e=>{ const btn=e.target.closest('button'); if(!btn) return; const id=btn.dataset.id; const act=btn.dataset.act; const c=state.contacts.find(x=>x.id===id); if(!c) return; if(act==='del'){ if(confirm('Kontakt löschen?')) deleteContact(id); } if(act==='edit'){ const tr=btn.closest('tr'); tr.innerHTML=`<td><input id=\"e_name\" value=\"${escapeHtml(c.name)}\"/></td><td><input id=\"e_phone\" value=\"${escapeHtml(c.phone)}\"/></td><td><input id=\"e_note\" value=\"${escapeHtml(c.note||'')}\"/></td><td class=\"actions\"><button class=\"btn primary\" data-act=\"save\" data-id=\"${c.id}\">Speichern</button><button class=\"btn danger\" data-act=\"cancel\">Abbrechen</button></td>`; } if(act==='save'){ const tr=btn.closest('tr'); const n=tr.querySelector('#e_name').value; const p=tr.querySelector('#e_phone').value; const nt=tr.querySelector('#e_note').value; if(!n.trim()||!p.trim()) return alert('Name/Telefon erforderlich'); updateContact(id,{name:n,phone:p,note:nt}); } if(act==='cancel') renderContacts(); });
+      $('#exportContacts').addEventListener('click',()=>{ const blob=new Blob([JSON.stringify(state.contacts,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`contacts-${new Date().toISOString().slice(0,10)}.json`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); });
+      $('#importContacts').addEventListener('click',()=>$('#importContactsFile').click());
+      $('#importContactsFile').addEventListener('change',async e=>{ const f=e.target.files&&e.target.files[0]; if(!f) return; const text=await f.text(); try{ const data=JSON.parse(text); if(!Array.isArray(data)) throw new Error('Ungültiges Format'); data.forEach(x=>state.contacts.push({id:uid(),name:x.name||'',phone:x.phone||'',note:x.note||''})); save(); renderContacts(); alert('Import fertig'); }catch(err){ alert('Import fehlgeschlagen: '+err.message);} e.target.value=''; });
 
       // Notes events
-      $('#addNote').addEventListener('click', async ()=>{
-        const title = $('#noteTitle').value; const tags = $('#noteTags').value; const text = $('#noteText').value; const file = $('#noteImage').files[0];
-        let image = '';
-        if(file){ try{ image = await readImageAsDataURL(file); }catch{ alert('Bild konnte nicht gelesen werden.'); }}
-        if(!title.trim() && !text.trim() && !image){ return alert('Bitte mindestens Titel, Text oder Bild angeben.'); }
-        addNote({title:title.trim(), tags:tags.trim(), text:text.trim(), image});
-        $('#noteTitle').value=''; $('#noteTags').value=''; $('#noteText').value=''; $('#noteImage').value='';
-      });
+      $('#addNote').addEventListener('click',async ()=>{ const title=$('#noteTitle').value; const tags=$('#noteTags').value; const text=$('#noteText').value; const f=$('#noteImage').files[0]; let image=''; if(f){ try{ image=await readAsDataURL(f);}catch{} } if(!title.trim() && !text.trim() && !image) return alert('Bitte mindestens Titel, Text oder Bild angeben.'); addNote({title:title.trim(),tags:tags.trim(),text:text.trim(),image}); $('#noteTitle').value=$('#noteTags').value=$('#noteText').value=''; $('#noteImage').value=''; });
+      $('#notesBody').addEventListener('click',e=>{ const btn=e.target.closest('button'); if(!btn) return; const id=btn.dataset.id; const act=btn.dataset.act; const n=state.notes.find(x=>x.id===id); if(!n) return; if(act==='open') openNoteModal(n); if(act==='del-note'){ if(confirm('Diese Notiz löschen?')) deleteNote(id); }});
 
-      $('#notesBody').addEventListener('click', (e)=>{
-        const btn = e.target.closest('button'); if(!btn) return; const id = btn.dataset.id; const act = btn.dataset.act; const n = state.notes.find(x=>x.id===id); if(!n) return;
-        if(act==='open') openNoteModal(n);
-        if(act==='del-note'){ if(confirm('Diese Notiz löschen?')) deleteNote(id); }
-      });
+      // Cases events
+      $('#addCase').addEventListener('click',()=>{ const obj={ title:$('#caseTitle').value.trim(), number:$('#caseNumber').value.trim(), status:$('#caseStatus').value.trim(), people:$('#casePeople').value.trim(), tags:$('#caseTags').value.trim(), desc:$('#caseDesc').value.trim() }; if(!obj.title||!obj.number) return alert('Titel und Aktenzeichen sind erforderlich.'); addCase(obj); $('#caseTitle').value=$('#caseNumber').value=$('#caseStatus').value=$('#casePeople').value=$('#caseTags').value=$('#caseDesc').value=''; });
+      $('#casesBody').addEventListener('click',e=>{ const btn=e.target.closest('button'); if(!btn) return; const id=btn.dataset.id; const act=btn.dataset.act; const c=state.cases.find(x=>x.id===id); if(!c) return; if(act==='open-case') openCaseModal(c); if(act==='del-case'){ if(confirm('Diesen Fall löschen?')) deleteCase(id); } });
 
-      // Enter-to-submit for contact inputs
-      ['name','phone','note'].forEach(id=>{ document.getElementById(id).addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); document.getElementById('addContact').click(); } }); });
-
-      // Year
-      // (No footer year text element in this version)
+      // Enter shortcuts
+      ['name','phone','note'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); document.getElementById('addContact').click(); } }); });
     }
 
     document.addEventListener('DOMContentLoaded', init);

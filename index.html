@@ -3,120 +3,150 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Telefonbuch — Hack-Style</title>
-  <meta name="description" content="Lokales Telefonbuch (localStorage) im roten Hack/Cyber-Style." />
+  <title>Telefonbuch — Liquid Glass</title>
+  <meta name="description" content="Lokales Telefonbuch (localStorage) im flüssigen Glassmorphism-Stil mit weich animierten Blobs." />
   <link rel="icon" href="data:;base64,iVBORw0KGgo=" />
   <style>
-    /* Hack-Style: rot / monospaced */
-    :root{ --bg:#050507; --panel:#0b0b0d; --accent:#ff0033; --accent2:#ff5c7a; --text:#e6e6e6; --muted:#9aa4b2; --radius:10px; }
+    /* ====== Liquid Glass Theme ====== */
+    :root{
+      --bg1:#0b0f1a; --bg2:#0a0e18; --glass:rgba(255,255,255,0.08);
+      --border:rgba(255,255,255,0.18); --text:#e9eef6; --muted:#a5b1c2;
+      --accent:#6ee7f9; --accent2:#a78bfa; --ok:#22c55e; --danger:#ef4444;
+      --radius:18px; --gap:14px; --maxw:1100px;
+    }
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{margin:0; font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', monospace; background:radial-gradient(ellipse at 10% 10%, rgba(255,0,51,0.06), transparent 10%), linear-gradient(180deg,#040405,#0b0b0d 60%); color:var(--text); -webkit-font-smoothing:antialiased}
-    .container{max-width:1100px; margin:24px auto; padding:20px}
-    header{display:flex; align-items:center; justify-content:space-between; gap:12px}
-    .logo{display:flex;align-items:center;gap:12px}
-    .badge{background:linear-gradient(90deg,var(--accent),var(--accent2)); padding:6px 10px; border-radius:999px; color:#071018; font-weight:700}
-    h1{margin:0; font-size:clamp(1.4rem,3.2vw,2rem); letter-spacing:1px}
+    body{margin:0; font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial; color:var(--text); background:radial-gradient(1200px 800px at 10% 10%, #10172a 0%, #070a12 60%, #05080f 100%); overflow-x:hidden}
 
-    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.12)); border:1px solid rgba(255,0,51,0.08); border-radius:var(--radius); padding:14px; box-shadow:0 6px 24px rgba(0,0,0,0.6)}
-    .controls{display:grid; gap:12px; margin-top:14px}
-    label{display:block; font-size:.95rem; color:var(--muted);}
-    input, textarea{background:#05060a; color:var(--text); border:1px solid rgba(255,255,255,0.04); padding:10px 12px; border-radius:8px; width:100%; font-family:inherit}
-    input:focus{outline:2px solid rgba(255,0,51,0.18); border-color:var(--accent)}
-    .row{display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:12px}
-    button{background:transparent; color:var(--accent2); border:1px solid rgba(255,0,51,0.12); padding:10px 12px; border-radius:8px; cursor:pointer; font-weight:700}
-    button.primary{background:linear-gradient(90deg,var(--accent),var(--accent2)); color:#071018; border:none}
-    button.danger{background:#2b0000; color:#ff8a9b; border:1px solid rgba(255,0,51,0.08)}
+    /* Background animated blobs */
+    .blob{position:fixed; filter:blur(40px); opacity:.55; z-index:-2; animation:float 18s ease-in-out infinite}
+    .b1{top:-120px; left:-120px; width:480px; height:480px; background:radial-gradient(circle at 30% 30%, var(--accent), transparent 60%)}
+    .b2{bottom:-140px; right:-160px; width:520px; height:520px; background:radial-gradient(circle at 70% 70%, var(--accent2), transparent 60%); animation-delay: -7s}
+    .b3{top:40%; left:60%; width:360px; height:360px; background:radial-gradient(circle at 40% 60%, #34d399, transparent 60%); animation-delay: -3s}
+    @keyframes float{ 0%,100%{ transform:translateY(0) translateX(0) scale(1);} 50%{ transform:translateY(-30px) translateX(20px) scale(1.05);} }
+
+    .container{max-width:var(--maxw); margin:0 auto; padding:28px; position:relative}
+
+    header{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px}
+    .brand{display:flex; gap:12px; align-items:center}
+    .logo{width:48px; height:48px; border-radius:16px; background:linear-gradient(135deg, var(--accent), var(--accent2)); display:grid; place-items:center; color:#0b0f1a; font-weight:900; box-shadow:0 10px 30px rgba(167,139,250,.35)}
+    h1{margin:0; font-size:clamp(1.4rem,3.2vw,2.2rem)}
+
+    /* Glass cards */
+    .glass{background:var(--glass); border:1px solid var(--border); border-radius:var(--radius); backdrop-filter: blur(18px) saturate(120%); -webkit-backdrop-filter: blur(18px) saturate(120%); box-shadow: 0 10px 30px rgba(0,0,0,.35)}
 
     .toolbar{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
-    .toolbar input[type="search"]{min-width:220px; background:#020203; border:1px solid rgba(255,255,255,0.03)}
+    input, button{font:inherit}
+    input[type="search"], input[type="text"], input[type="tel"]{
+      background:rgba(255,255,255,.06); color:var(--text); border:1px solid rgba(255,255,255,.14); border-radius:12px; padding:10px 12px; outline:none;
+    }
+    input:focus{border-color:var(--accent); box-shadow:0 0 0 3px rgba(110,231,249,.18)}
 
-    table{width:100%; border-collapse:collapse; margin-top:12px}
-    th,td{padding:12px 10px; border-bottom:1px dashed rgba(255,255,255,0.03); text-align:left}
-    thead th{color:var(--muted); font-size:.9rem}
-    tbody tr:hover{background:linear-gradient(90deg, rgba(255,0,51,0.02), transparent)}
+    button{background:linear-gradient(135deg, rgba(110,231,249,.15), rgba(167,139,250,.15)); color:var(--text); border:1px solid rgba(255,255,255,.14); border-radius:12px; padding:10px 12px; cursor:pointer; transition:transform .06s ease, box-shadow .2s ease}
+    button:hover{transform:translateY(-1px); box-shadow:0 10px 20px rgba(0,0,0,.3)}
+    button.primary{background:linear-gradient(135deg, var(--accent), var(--accent2)); color:#0b0f1a; border:none; font-weight:800}
+    button.danger{background:linear-gradient(135deg, rgba(239,68,68,.15), rgba(239,68,68,.25)); color:#fecaca; border:1px solid rgba(239,68,68,.35)}
+
+    .controls{display:grid; gap:var(--gap); padding:16px}
+    .row{display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:var(--gap)}
+
+    table{width:100%; border-collapse:separate; border-spacing:0; overflow:hidden}
+    thead th{position:sticky; top:0; background:rgba(10,14,22,.6); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); z-index:1}
+    th, td{padding:12px 10px; text-align:left; border-bottom:1px solid rgba(255,255,255,.06)}
+    tbody tr:hover{background:rgba(255,255,255,.04)}
     .actions{display:flex; gap:8px}
 
-    .meta{color:var(--muted); font-size:.9rem}
-    .footer{margin-top:14px; color:var(--muted); text-align:center}
+    .meta{color:var(--muted); font-size:.92rem}
+    footer{margin-top:18px; color:var(--muted); text-align:center}
 
-    @media (max-width:900px){ .row{grid-template-columns:1fr 1fr;}} 
+    /* Liquid divider */
+    .glowline{height:2px; background:linear-gradient(90deg, transparent, rgba(110,231,249,.8), rgba(167,139,250,.8), transparent); filter:blur(.6px); margin:12px 0; opacity:.9}
+
+    @media (max-width:900px){ .row{grid-template-columns:1fr 1fr;} }
     @media (max-width:560px){
       .row{grid-template-columns:1fr}
       thead{display:none}
       tbody tr{display:grid; grid-template-columns:1fr 1fr; gap:6px}
       tbody td::before{content:attr(data-label) ": "; color:var(--muted); font-size:.85rem}
     }
-
-    /* small terminal-like header lines */
-    .term{font-size:.85rem; color:#ff7b99; opacity:.9}
-    .monobig{font-family:inherit; font-weight:700}
   </style>
 </head>
 <body>
+  <!-- animated background blobs -->
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+  <div class="blob b3"></div>
+
   <div class="container">
-    <header>
-      <div class="logo">
-        <div class="monobig">⌘ TEL</div>
+    <header class="glass" style="padding:14px 16px;">
+      <div class="brand">
+        <div class="logo">TB</div>
         <div>
-          <h1>Telefonbuch — Hack-Style</h1>
-          <div class="meta">Lokale Speicherung (localStorage) · Daten bleiben auf deinem Gerät</div>
+          <h1>Telefonbuch — Liquid&nbsp;Glass</h1>
+          <div class="meta">Lokale Speicherung (localStorage). Modernes Glassmorphism-UI.</div>
         </div>
       </div>
       <div class="toolbar">
         <input id="search" type="search" placeholder="Suche: Name, Nummer, Notiz…" aria-label="Suche" />
-        <button id="exportBtn">Export</button>
-        <label style="display:inline-block;"> <input id="importFile" type="file" accept="application/json" style="display:none"/> <button id="importBtn">Import</button></label>
-        <button id="clearBtn" class="danger">Alles löschen</button>
+        <button id="exportBtn" title="Export als JSON">Export</button>
+        <label for="importFile" style="display:inline-block"><input id="importFile" type="file" accept="application/json" style="display:none"/><button id="importBtn">Import</button></label>
+        <button id="clearBtn" class="danger" title="Alle Einträge löschen">Alles löschen</button>
       </div>
     </header>
 
-    <section class="card controls" aria-labelledby="addTitle">
-      <h2 id="addTitle">Kontakt hinzufügen</h2>
+    <div class="glowline"></div>
+
+    <section class="glass controls" aria-labelledby="addTitle">
+      <h2 id="addTitle" style="margin:0">Kontakt hinzufügen</h2>
       <div class="row">
         <label> Name <input id="name" placeholder="Anna Müller" autocomplete="name" /></label>
         <label> Telefon <input id="phone" placeholder="+49 176 1234567" inputmode="tel" /></label>
-        <label> Notiz <input id="note" placeholder="z.B. Schule" /></label>
+        <label> Notiz <input id="note" placeholder="z. B. Schule" /></label>
         <div style="display:grid;align-content:end"><button id="addBtn" class="primary">Hinzufügen</button></div>
       </div>
-      <div class="term">Tip: Nutze Export/Import um Backups zu machen. Demo-Daten mit dem Link in der Fußzeile.</div>
+      <div class="meta">Tipp: Exportiere regelmäßig ein Backup. Import liest eine JSON-Liste von Kontakten ein.</div>
     </section>
 
-    <section class="card" style="margin-top:14px">
+    <section class="glass" style="margin-top:16px; padding:12px">
       <table aria-label="Kontaktliste">
         <thead>
-          <tr><th>Name</th><th>Telefon</th><th>Notiz</th><th>Aktionen</th></tr>
+          <tr>
+            <th><button class="glass" data-sort="name" style="padding:6px 10px">Name ⟷</button></th>
+            <th><button class="glass" data-sort="phone" style="padding:6px 10px">Telefon ⟷</button></th>
+            <th>Notiz</th>
+            <th>Aktionen</th>
+          </tr>
         </thead>
         <tbody id="tbody"></tbody>
       </table>
     </section>
 
-    <div class="footer">© <span id="year"></span> · <a href="#" id="demoFill">Demo-Daten</a></div>
+    <footer>© <span id="year"></span> Liquid Glass Telefonbuch · <a href="#" id="demoFill">Demo-Daten</a></footer>
   </div>
 
   <script>
-    // LocalStorage Telefonbuch — Hack-Style
-    const STORAGE = 'phonebook_local_hack_v1';
+    // ===== Telefonbuch (localStorage) – Logik bleibt wie zuvor =====
+    const STORAGE = 'phonebook_local_liquid_v1';
     const $ = (s,r=document)=>r.querySelector(s);
-    const $$ = (s,r=document)=>Array.from(r.querySelectorAll(s));
     let state = {contacts: [], sortBy:'name', sortDir:'asc', q:''};
 
     function uid(){ return Math.random().toString(36).slice(2,10); }
     function save(){ try{ localStorage.setItem(STORAGE, JSON.stringify(state.contacts)); }catch(e){ alert('Speichern fehlgeschlagen: '+e.message); }}
     function load(){ try{ state.contacts = JSON.parse(localStorage.getItem(STORAGE)||'[]'); }catch(e){ state.contacts = []; }}
-    function escape(s){ return (s+'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[ch])); }
+    function escapeHtml(s){ return (s+'').replace(/[&<>"']/g, ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[ch])); }
 
     function render(){
       let list = [...state.contacts];
-      if(state.q){ const q=state.q.toLowerCase(); list = list.filter(c=> (c.name||'').toLowerCase().includes(q) || (c.phone||'').toLowerCase().includes(q) || (c.note||'').toLowerCase().includes(q)); }
-      list.sort((a,b)=>{ const k=state.sortBy; const A=(a[k]||'').toLowerCase(); const B=(b[k]||'').toLowerCase(); if(A<B) return state.sortDir==='asc'? -1:1; if(A>B) return state.sortDir==='asc'?1:-1; return 0; });
+      if(state.q){ const q = state.q.toLowerCase(); list = list.filter(c => (c.name||'').toLowerCase().includes(q) || (c.phone||'').toLowerCase().includes(q) || (c.note||'').toLowerCase().includes(q)); }
+      list.sort((a,b)=>{ const k=state.sortBy; const A=(a[k]||'').toLowerCase(); const B=(b[k]||'').toLowerCase(); if(A<B) return state.sortDir==='asc' ? -1 : 1; if(A>B) return state.sortDir==='asc' ? 1 : -1; return 0; });
+
       const tbody = $('#tbody'); tbody.innerHTML='';
       for(const c of list){
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td data-label="Name">${escape(c.name)}</td>
-          <td data-label="Telefon"><a href="tel:${encodeURIComponent(c.phone)}" style="color:var(--accent2)">${escape(c.phone)}</a></td>
-          <td data-label="Notiz">${escape(c.note||'')}</td>
+          <td data-label="Name">${escapeHtml(c.name)}</td>
+          <td data-label="Telefon"><a href="tel:${encodeURIComponent(c.phone)}" style="color:var(--accent)">${escapeHtml(c.phone)}</a></td>
+          <td data-label="Notiz">${escapeHtml(c.note||'')}</td>
           <td class="actions">
             <button data-act="edit" data-id="${c.id}">Bearbeiten</button>
             <button data-act="del" data-id="${c.id}" class="danger">Löschen</button>
@@ -125,59 +155,65 @@
       }
     }
 
-    function addContact(name,phone,note){ state.contacts.push({id:uid(), name:name.trim(), phone:phone.trim(), note:(note||'').trim()}); save(); render(); }
-    function updateContact(id,patch){ const i=state.contacts.findIndex(x=>x.id===id); if(i>-1){ state.contacts[i] = {...state.contacts[i], ...patch}; save(); render(); }}
+    function addContact(name, phone, note){ state.contacts.push({id:uid(), name:name.trim(), phone:phone.trim(), note:(note||'').trim()}); save(); render(); }
+    function updateContact(id, patch){ const i=state.contacts.findIndex(x=>x.id===id); if(i>-1){ state.contacts[i] = {...state.contacts[i], ...patch}; save(); render(); }}
     function deleteContact(id){ state.contacts = state.contacts.filter(x=>x.id!==id); save(); render(); }
 
     function init(){
-      $('#year').textContent = new Date().getFullYear();
+      document.getElementById('year').textContent = new Date().getFullYear();
       load(); render();
 
-      $('#addBtn').addEventListener('click', ()=>{
-        const name = $('#name').value; const phone = $('#phone').value; const note = $('#note').value;
+      document.getElementById('addBtn').addEventListener('click', ()=>{
+        const name = document.getElementById('name').value;
+        const phone = document.getElementById('phone').value;
+        const note = document.getElementById('note').value;
         if(!name.trim()) return alert('Bitte Namen eingeben.');
         if(!phone.trim()) return alert('Bitte Telefonnummer eingeben.');
-        addContact(name,phone,note);
-        $('#name').value=''; $('#phone').value=''; $('#note').value=''; $('#name').focus();
+        addContact(name, phone, note);
+        document.getElementById('name').value=''; document.getElementById('phone').value=''; document.getElementById('note').value='';
+        document.getElementById('name').focus();
       });
 
-      $('#search').addEventListener('input', (e)=>{ state.q = e.target.value; render(); });
+      document.getElementById('search').addEventListener('input', (e)=>{ state.q = e.target.value; render(); });
 
-      $('#tbody').addEventListener('click', (e)=>{
+      document.getElementById('tbody').addEventListener('click', (e)=>{
         const btn = e.target.closest('button'); if(!btn) return; const id = btn.getAttribute('data-id'); const act = btn.getAttribute('data-act');
-        const c = state.contacts.find(x=>x.id===id);
-        if(!c) return;
+        const c = state.contacts.find(x=>x.id===id); if(!c) return;
         if(act==='del'){ if(confirm('Löschen?')) deleteContact(id); }
         if(act==='edit'){
           const tr = btn.closest('tr');
           tr.innerHTML = `
-            <td><input id="e_name" value="${escape(c.name)}" /></td>
-            <td><input id="e_phone" value="${escape(c.phone)}" /></td>
-            <td><input id="e_note" value="${escape(c.note||'')}" /></td>
-            <td class="actions"><button data-act="save" data-id="${c.id}">Speichern</button> <button data-act="cancel" class="danger">Abbrechen</button></td>`;
+            <td><input id=\"e_name\" value=\"${escapeHtml(c.name)}\" /></td>
+            <td><input id=\"e_phone\" value=\"${escapeHtml(c.phone)}\" /></td>
+            <td><input id=\"e_note\" value=\"${escapeHtml(c.note||'')}\" /></td>
+            <td class=\"actions\"><button data-act=\"save\" data-id=\"${c.id}\">Speichern</button> <button data-act=\"cancel\" class=\"danger\">Abbrechen</button></td>`;
         }
         if(act==='save'){
-          const tr = btn.closest('tr'); const name = tr.querySelector('#e_name').value; const phone = tr.querySelector('#e_phone').value; const note = tr.querySelector('#e_note').value;
-          if(!name.trim()||!phone.trim()) return alert('Name und Telefon erforderlich.'); updateContact(id,{name,phone,note});
+          const tr = btn.closest('tr');
+          const name = tr.querySelector('#e_name').value; const phone = tr.querySelector('#e_phone').value; const note = tr.querySelector('#e_note').value;
+          if(!name.trim()||!phone.trim()) return alert('Name und Telefon erforderlich.'); updateContact(id, {name, phone, note});
         }
         if(act==='cancel') render();
       });
 
-      $('#exportBtn').addEventListener('click', ()=>{
+      document.getElementById('exportBtn').addEventListener('click', ()=>{
         const blob = new Blob([JSON.stringify(state.contacts, null, 2)], {type:'application/json'});
         const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download = `telefonbuch-${new Date().toISOString().slice(0,10)}.json`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
       });
 
-      $('#importBtn').addEventListener('click', ()=>{ $('#importFile').click(); });
-      $('#importFile').addEventListener('change', async (e)=>{
-        const file = e.target.files && e.target.files[0]; if(!file) return; const text = await file.text(); try{ const data = JSON.parse(text); if(!Array.isArray(data)) throw new Error('Ungültiges Format'); for(const x of data){ addContact(x.name||'', x.phone||'', x.note||''); } alert('Import fertig.'); }catch(err){ alert('Import fehlgeschlagen: '+err.message); } e.target.value='';
+      document.getElementById('importBtn').addEventListener('click', ()=>{ document.getElementById('importFile').click(); });
+      document.getElementById('importFile').addEventListener('change', async (e)=>{
+        const file = e.target.files && e.target.files[0]; if(!file) return; const text = await file.text();
+        try{ const data = JSON.parse(text); if(!Array.isArray(data)) throw new Error('Ungültiges Format'); for(const x of data){ addContact(x.name||'', x.phone||'', x.note||''); } alert('Import fertig.'); }
+        catch(err){ alert('Import fehlgeschlagen: '+err.message); }
+        e.target.value='';
       });
 
-      $('#clearBtn').addEventListener('click', ()=>{ if(confirm('Wirklich alle Kontakte löschen?')){ state.contacts = []; save(); render(); }});
+      document.getElementById('clearBtn').addEventListener('click', ()=>{ if(confirm('Wirklich alle Kontakte löschen?')){ state.contacts = []; save(); render(); }});
 
-      $('#demoFill').addEventListener('click', (e)=>{ e.preventDefault(); if(confirm('Demo-Daten anlegen?')){ addContact('Anna Müller','+49 176 1234567','Schule'); addContact('Max Schneider','+49 351 555444','Nachhilfe'); addContact('Freddy Fresh','+49 351 123456','Pizza'); }});
+      document.getElementById('demoFill').addEventListener('click', (e)=>{ e.preventDefault(); if(confirm('Demo-Daten anlegen?')){ addContact('Anna Müller','+49 176 1234567','Schule'); addContact('Max Schneider','+49 351 555444','Nachhilfe'); addContact('Freddy Fresh','+49 351 123456','Pizza'); }});
 
-      ['name','phone','note'].forEach(id=>{ $('#'+id).addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); $('#addBtn').click(); } }); });
+      ;['name','phone','note'].forEach(id=>{ document.getElementById(id).addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); document.getElementById('addBtn').click(); } }); });
     }
 
     document.addEventListener('DOMContentLoaded', init);

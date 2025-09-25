@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Telefonbuch</title>
-  <meta name="description" content="Einfaches Telefonbuch im Browser – Kontakte hinzufügen, bearbeiten, löschen, suchen. Daten bleiben im Browser (localStorage)." />
+  <title>Telefonbuch (Cloud-Sync)</title>
+  <meta name="description" content="Telefonbuch mit Cloud-Sync: Jeder mit dem Link kann Einträge hinzufügen. Bearbeiten/Löschen nur vom Ersteller. Firestore + anonyme Anmeldung." />
   <link rel="icon" href="data:;base64,iVBORw0KGgo=" />
   <style>
     :root{
@@ -63,7 +63,7 @@
         <div class="logo" aria-hidden="true">T</div>
         <div>
           <h1>Telefonbuch</h1>
-          <div class="badge">Deine Daten bleiben auf diesem Gerät (localStorage)</div>
+          <div class="badge">Cloud-Sync aktiv • Jeder mit dem Link kann Einträge hinzufügen</div>
         </div>
       </div>
       <div class="toolbar">
@@ -73,7 +73,7 @@
           <input id="importFile" type="file" accept="application/json" style="position:absolute;opacity:0;width:0;height:0" aria-label="Kontakte aus JSON importieren" />
           <span style="padding:10px 12px">Import</span>
         </label>
-        <button id="clearBtn" class="danger" title="Alle Kontakte löschen">Alles löschen</button>
+        <button id="clearBtn" class="danger" title="Alle eigenen Kontakte löschen">Eigene löschen</button>
       </div>
     </header>
 
@@ -94,6 +94,7 @@
         </div>
       </div>
       <div id="phoneHint" style="color:var(--muted); font-size:.9rem">Erlaubt: Ziffern, Leerzeichen, + ( ) -</div>
+      <div id="userInfo" style="color:var(--muted); font-size:.9rem"></div>
     </section>
 
     <section class="card" style="margin-top:16px">
@@ -112,49 +113,53 @@
       </div>
     </section>
 
-    <div class="footer">© <span id="year"></span> Telefonbuch · <a href="#" id="demoFill">Demo-Daten füllen</a></div>
+    <div class="footer">© <span id="year"></span> Telefonbuch · <a href="#" id="demoFill">Demo-Daten (nur eigene)</a></div>
   </div>
 
+  <!-- Firebase CDN (compat für einfache Einbindung) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+
   <script>
+    // ====== KONFIGURATION AUS FIEBASE-KONSOLE EINTRAGEN ======
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+    // =========================================================
+
     // --- Utils ---
     const $ = (sel, root=document) => root.querySelector(sel);
     const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
-    const STORAGE_KEY = 'phonebook_v1';
+    const state = { sortBy:'name', sortDir:'asc', q:'', uid:null, contacts:[] };
 
-    const state = {
-      contacts: [],
-      sortBy: 'name',
-      sortDir: 'asc',
-      q: ''
-    };
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
 
-    function save(){
-      try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state.contacts)); }
-      catch(e){ alert('Konnte nicht speichern: ' + e.message); }
-    }
-    function load(){
-      try{ state.contacts = JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]'); }
-      catch{ state.contacts = []; }
-    }
-
-    function uid(){ return Math.random().toString(36).slice(2,10); }
+    // Security-Idee: Bearbeiten/Löschen nur, wenn createdBy == eigener uid
+    function canEdit(doc){ return doc.createdBy === state.uid; }
 
     function normalize(s){ return (s||'').toLowerCase(); }
+    function escapeHtml(s){
+      return (s+"").replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[ch]));
+    }
 
     function render(){
       let list = [...state.contacts];
-      // Filter
       if(state.q){
         const q = normalize(state.q);
         list = list.filter(c => normalize(c.name).includes(q) || normalize(c.phone).includes(q) || normalize(c.note).includes(q));
       }
-      // Sort
       list.sort((a,b)=>{
-        const k = state.sortBy;
-        const va = normalize(a[k]);
-        const vb = normalize(b[k]);
-        if(va < vb) return state.sortDir === 'asc' ? -1 : 1;
-        if(va > vb) return state.sortDir === 'asc' ? 1 : -1;
+        const k = state.sortBy; const va = normalize(a[k]); const vb = normalize(b[k]);
+        if(va<vb) return state.sortDir==='asc' ? -1 : 1;
+        if(va>vb) return state.sortDir==='asc' ? 1 : -1;
         return 0;
       });
 
@@ -162,57 +167,58 @@
       tbody.innerHTML = '';
       for(const c of list){
         const tr = document.createElement('tr');
+        const controls = canEdit(c)
+          ? `<button class="ghost" data-act="edit" data-id="${c.id}">Bearbeiten</button>
+             <button class="danger" data-act="del" data-id="${c.id}">Löschen</button>`
+          : `<span class="badge">Nur lesen</span>`;
         tr.innerHTML = `
           <td data-label="Name">${escapeHtml(c.name)}</td>
           <td data-label="Telefon"><a href="tel:${encodeURIComponent(c.phone)}">${escapeHtml(c.phone)}</a></td>
           <td data-label="Notiz">${escapeHtml(c.note||'')}</td>
-          <td data-label="Aktionen" class="actions">
-            <button class="ghost" data-act="edit" data-id="${c.id}">Bearbeiten</button>
-            <button class="danger" data-act="del" data-id="${c.id}">Löschen</button>
-          </td>`;
+          <td data-label="Aktionen" class="actions">${controls}</td>`;
         tbody.appendChild(tr);
       }
     }
 
-    function escapeHtml(s){
-      return (s+"").replace(/[&<>"]+/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+    async function addContact(name, phone, note){
+      const doc = await db.collection('contacts').add({
+        name: name.trim(), phone: phone.trim(), note: (note||'').trim(),
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        createdBy: state.uid
+      });
+      return doc.id;
     }
 
-    function addContact(name, phone, note){
-      state.contacts.push({ id: uid(), name: name.trim(), phone: phone.trim(), note: (note||'').trim() });
-      save(); render();
+    async function updateContact(id, patch){
+      await db.collection('contacts').doc(id).update(patch);
     }
 
-    function updateContact(id, patch){
-      const i = state.contacts.findIndex(c=>c.id===id);
-      if(i>-1){ state.contacts[i] = {...state.contacts[i], ...patch}; save(); render(); }
+    async function deleteContact(id){
+      await db.collection('contacts').doc(id).delete();
     }
 
-    function deleteContact(id){
-      state.contacts = state.contacts.filter(c=>c.id!==id); save(); render();
+    function initRealtime(){
+      db.collection('contacts').onSnapshot((snap)=>{
+        const arr = [];
+        snap.forEach(d=>{ arr.push({ id:d.id, ...d.data() }); });
+        state.contacts = arr;
+        render();
+      });
     }
 
-    // --- Events ---
-    function init(){
+    function initUI(){
       $('#year').textContent = new Date().getFullYear();
-      load(); render();
 
-      // Add
-      $('#addBtn').addEventListener('click', ()=>{
-        const name = $('#name').value;
-        const phone = $('#phone').value;
-        const note = $('#note').value;
+      $('#addBtn').addEventListener('click', async ()=>{
+        const name = $('#name').value; const phone = $('#phone').value; const note = $('#note').value;
         if(!name.trim()) return alert('Bitte einen Namen eingeben.');
         if(!phone.trim()) return alert('Bitte eine Telefonnummer eingeben.');
-        addContact(name, phone, note);
+        await addContact(name, phone, note);
         $('#name').value=''; $('#phone').value=''; $('#note').value='';
         $('#name').focus();
       });
 
-      // Search
       $('#search').addEventListener('input', (e)=>{ state.q = e.target.value; render(); });
-
-      // Sort buttons
       $$('th button[data-sort]').forEach(btn=>{
         btn.addEventListener('click', ()=>{
           const key = btn.getAttribute('data-sort');
@@ -222,19 +228,17 @@
         });
       });
 
-      // Actions (edit/delete)
-      $('#tbody').addEventListener('click', (e)=>{
-        const btn = e.target.closest('button');
-        if(!btn) return;
-        const id = btn.getAttribute('data-id');
-        const act = btn.getAttribute('data-act');
+      $('#tbody').addEventListener('click', async (e)=>{
+        const btn = e.target.closest('button'); if(!btn) return;
+        const id = btn.getAttribute('data-id'); const act = btn.getAttribute('data-act');
+        const c = state.contacts.find(x=>x.id===id);
+        if(!c) return;
+        if(!canEdit(c)) return alert('Du kannst nur eigene Einträge bearbeiten/löschen.');
+
         if(act==='del'){
-          if(confirm('Diesen Kontakt wirklich löschen?')) deleteContact(id);
+          if(confirm('Diesen Kontakt wirklich löschen?')) await deleteContact(id);
         }
         if(act==='edit'){
-          const c = state.contacts.find(x=>x.id===id);
-          if(!c) return;
-          // Inline-Editor
           const tr = btn.closest('tr');
           tr.innerHTML = `
             <td data-label="Name"><input id="e_name" value="${escapeHtml(c.name)}" /></td>
@@ -251,63 +255,62 @@
           const phone = tr.querySelector('#e_phone').value;
           const note = tr.querySelector('#e_note').value;
           if(!name.trim()||!phone.trim()) return alert('Name und Telefon sind erforderlich.');
-          updateContact(id, {name, phone, note});
+          await updateContact(id, {name, phone, note});
         }
         if(act==='cancel') render();
       });
 
-      // Export
+      // Export/Import arbeiten nur auf eigenen Einträgen (createdBy == uid)
       $('#exportBtn').addEventListener('click', ()=>{
-        const blob = new Blob([JSON.stringify(state.contacts, null, 2)], {type:'application/json'});
+        const own = state.contacts.filter(c=>canEdit(c));
+        const blob = new Blob([JSON.stringify(own, null, 2)], {type:'application/json'});
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = `telefonbuch-${new Date().toISOString().slice(0,10)}.json`;
+        const a = document.createElement('a'); a.href=url; a.download=`telefonbuch-${new Date().toISOString().slice(0,10)}.json`;
         document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
       });
 
-      // Import
-      $('#importFile').addEventListener('change', (e)=>{
-        const file = e.target.files && e.target.files[0];
-        if(!file) return;
-        const reader = new FileReader();
-        reader.onload = () => {
-          try{
-            const data = JSON.parse(reader.result);
-            if(!Array.isArray(data)) throw new Error('Ungültiges Format');
-            // leichte Normalisierung
-            const cleaned = data.map(x=>({id: x.id||uid(), name: (x.name||'').toString(), phone:(x.phone||'').toString(), note:(x.note||'').toString()}));
-            state.contacts = cleaned; save(); render();
-            alert('Import erfolgreich.');
-          }catch(err){ alert('Import fehlgeschlagen: '+err.message); }
-          e.target.value = '';
-        };
-        reader.readAsText(file);
+      $('#importFile').addEventListener('change', async (e)=>{
+        const file = e.target.files && e.target.files[0]; if(!file) return;
+        const text = await file.text();
+        try{
+          const data = JSON.parse(text);
+          if(!Array.isArray(data)) throw new Error('Ungültiges Format');
+          for(const x of data){
+            await addContact(x.name||'', x.phone||'', x.note||'');
+          }
+          alert('Import erfolgreich.');
+        }catch(err){ alert('Import fehlgeschlagen: '+err.message); }
+        e.target.value='';
       });
 
-      // Clear all
-      $('#clearBtn').addEventListener('click', ()=>{
-        if(confirm('Wirklich alle Kontakte löschen?')){ state.contacts = []; save(); render(); }
+      $('#clearBtn').addEventListener('click', async ()=>{
+        if(!confirm('Wirklich alle eigenen Kontakte löschen?')) return;
+        const own = state.contacts.filter(c=>canEdit(c));
+        for(const c of own){ await deleteContact(c.id); }
       });
 
-      // Demo-Daten
-      $('#demoFill').addEventListener('click', (e)=>{
+      $('#demoFill').addEventListener('click', async (e)=>{
         e.preventDefault();
-        if(state.contacts.length>0 && !confirm('Vorhandene Kontakte überschreiben?')) return;
-        state.contacts = [
-          {id:uid(), name:'Anna Müller', phone:'+49 176 1234567', note:'Schule'},
-          {id:uid(), name:'Max Schneider', phone:'+49 351 555444', note:'Nachhilfe'},
-          {id:uid(), name:'Freddy Fresh', phone:'+49 351 123456', note:'Pizza 😋'},
-        ];
-        save(); render();
+        if(!confirm('Demo-Daten anlegen (nur für dich sichtbar/bearbeitbar)?')) return;
+        await addContact('Anna Müller', '+49 176 1234567', 'Schule');
+        await addContact('Max Schneider', '+49 351 555444', 'Nachhilfe');
+        await addContact('Freddy Fresh', '+49 351 123456', 'Pizza 😋');
       });
 
-      // Submit on Enter inside inputs
       ['name','phone','note'].forEach(id=>{
         $('#'+id).addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); $('#addBtn').click(); } });
       });
     }
 
-    document.addEventListener('DOMContentLoaded', init);
-  </script>
-</body>
-</html>
+    async function start(){
+      $('#userInfo').textContent = 'Verbinde…';
+      try{
+        const cred = await auth.signInAnonymously();
+        state.uid = cred.user.uid;
+        $('#userInfo').textContent = 'Anonym angemeldet – deine eigenen Einträge kannst nur du bearbeiten/löschen.';
+        initRealtime();
+        initUI();
+      }catch(e){
+        console.error(e);
+        $('#userInfo').textContent = 'Fehler bei der Anmeldung. Prüfe die Firebase-Konfiguration.';
+      }

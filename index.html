@@ -5,9 +5,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Dashboard — Telefonbuch · Notizen · Fälle</title>
-  <meta name="description" content="Lokales Dashboard mit Telefonbuch, Notizen und Fallverwaltung. Apple-orientiertes Dark-Design (Blau, Glas) + fixer Startsound. Daten bleiben im Browser (localStorage)." />
+  <meta name="description" content="Lokales Dashboard mit Telefonbuch, Notizen und Fallverwaltung. Apple-inspiriertes Dark-Design (Glas · sanfte, federnde Animationen) + fester Startsound." />
   <link rel="icon" href="data:;base64,iVBORw0KGgo=" />
   <style>
+    /* =========================================================
+       Apple-orientiert · DARK · Blue Accent · Glass + Bounce
+       ========================================================= */
     :root{
       --bg:#0b1220; --bg2:#0a101c; --glass:rgba(10,16,28,.55); --glass2:rgba(12,18,32,.45);
       --border:rgba(255,255,255,.12); --text:#e9eef6; --muted:#a6b0c3;
@@ -19,7 +22,7 @@
     body{margin:0; font-family:Inter, ui-sans-serif, system-ui, -apple-system, "SF Pro Text", "Segoe UI", Roboto, Arial; color:var(--text);
       background: radial-gradient(1400px 900px at 15% 10%, #0f1a2f 0%, var(--bg2) 55%, #070c16 100%); overflow-x:hidden}
 
-    /* Background blobs */
+    /* ===== Animated background blobs (blueish) ===== */
     .blob{position:fixed; filter:blur(48px); opacity:.5; z-index:-2; animation:float 22s ease-in-out infinite}
     .b1{top:-160px; left:-200px; width:560px; height:560px; background:radial-gradient(circle at 30% 30%, rgba(10,132,255,.65), transparent 60%)}
     .b2{bottom:-180px; right:-240px; width:620px; height:620px; background:radial-gradient(circle at 70% 70%, rgba(90,200,250,.55), transparent 60%); animation-delay:-8s}
@@ -27,9 +30,11 @@
     @keyframes float{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(14px,-22px) scale(1.04)}}
     @media (prefers-reduced-motion: reduce){ .blob{animation:none} }
 
+    /* ===== Layout ===== */
     .app{display:grid; grid-template-columns:300px 1fr; min-height:100dvh}
     @media (max-width:1024px){ .app{grid-template-columns:1fr} }
 
+    /* ===== Sidebar & Hamburger ===== */
     .hamburger{display:none; position:fixed; top:14px; left:14px; z-index:10; width:46px; height:46px; border-radius:14px; border:1px solid var(--border); background:var(--glass2); backdrop-filter:blur(12px); cursor:pointer}
     .hamburger span, .hamburger::before, .hamburger::after{content:""; position:absolute; left:12px; right:12px; height:2px; background:#e9eef6; border-radius:2px; transition:.24s cubic-bezier(.2,1,.2,1)}
     .hamburger span{top:22px}
@@ -48,22 +53,38 @@
     .nav button:hover{background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.14)}
     .nav button.active{background:linear-gradient(135deg, rgba(10,132,255,.22), rgba(90,200,250,.18)); border-color:rgba(255,255,255,.22)}
 
+    @media (max-width:1024px){
+      .sidebar{position:fixed; left:-100%; width:min(320px,90vw); transition:left .26s cubic-bezier(.2,.9,.2,1); box-shadow:0 16px 40px rgba(0,0,0,.5)}
+      .sidebar.open{left:0}
+      .app{grid-template-columns:1fr}
+    }
+
     .main{padding:24px; max-width:var(--maxw); width:100%; margin:0 auto}
     .glass{background:var(--glass); border:1px solid var(--border); border-radius:var(--radius); backdrop-filter: blur(16px) saturate(120%); -webkit-backdrop-filter: blur(16px) saturate(120%); box-shadow: 0 10px 30px rgba(0,0,0,.45)}
     .section{padding:16px; margin-bottom:16px}
 
-    /* Inputs — FIX: style also inputs without type attribute */
     input, button, textarea{font:inherit}
+    /* Force dark glass inputs everywhere (fix white fields) */
     input:not([type="file"]):not([type="checkbox"]):not([type="radio"]),
     input[type="search"],
     textarea,
     select{
-      background:rgba(255,255,255,.06); color:var(--text); border:1px solid rgba(255,255,255,.18); border-radius:14px; padding:12px 14px; outline:none; backdrop-filter:blur(8px)
+      background:rgba(255,255,255,.06) !important; color:var(--text) !important; border:1px solid rgba(255,255,255,.18) !important; border-radius:14px !important; padding:12px 14px !important; outline:none !important; backdrop-filter:blur(8px) !important; -webkit-appearance:none; appearance:none
     }
-    input:focus, textarea:focus, select:focus{border-color:var(--accent); box-shadow:0 0 0 4px rgba(10,132,255,.18)}
+    input:focus, textarea:focus, select:focus{border-color:var(--accent) !important; box-shadow:0 0 0 4px rgba(10,132,255,.18) !important}
     ::placeholder{color:#aab4c6}
+    /* Fix autofill white background on Chrome */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus{
+      -webkit-text-fill-color:var(--text);
+      transition: background-color 9999s ease-out;
+      box-shadow:0 0 0px 1000px rgba(255,255,255,.06) inset;
+      caret-color:var(--text);
+    }
     textarea{min-height:120px; resize:vertical}
 
+    /* ===== Liquid (glassy) buttons ===== */
     .btn{display:inline-grid; place-items:center; padding:12px 16px; border-radius:999px; color:white; font-weight:800; cursor:pointer; user-select:none; border:none; position:relative; isolation:isolate; transition:transform .24s cubic-bezier(.2,1.2,.2,1), filter .2s}
     .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2)); box-shadow:0 6px 18px rgba(10,132,255,.35)}
     .btn.ghost{background:linear-gradient(135deg, rgba(255,255,255,.18), rgba(255,255,255,.12)); color:#e9eef6; border:1px solid rgba(255,255,255,.16)}
@@ -86,9 +107,11 @@
     .muted{color:var(--muted)}
     .hidden{display:none !important}
 
+    /* Fade-in */
     .fade-in{animation:fade .34s cubic-bezier(.2,.9,.2,1)}
     @keyframes fade{from{opacity:0; transform:translateY(8px) scale(.995)} to{opacity:1; transform:translateY(0) scale(1)}}
 
+    /* ===== Splash (Welcome) ===== */
     .splash{position:fixed; inset:0; display:grid; place-items:center; background:radial-gradient(1400px 900px at 50% 40%, #0f1a2f 0%, #091222 70%); z-index:50}
     .splash .box{text-align:center}
     .splash h2{margin:0; font-size:clamp(1.6rem,4vw,2.6rem)}
@@ -102,9 +125,6 @@
   <div class="blob b2"></div>
   <div class="blob b3"></div>
 
-  <!-- audio element for fixed startup sound (file must be in same folder) -->
-  <audio id="startup" src="mm.ogg" preload="auto"></audio>
-
   <!-- Splash welcome -->
   <div class="splash" id="splash">
     <div class="box">
@@ -112,6 +132,9 @@
       <div class="muted">Lädt Oberfläche…</div>
     </div>
   </div>
+
+  <!-- Fixed startup sound: place your audio file as startup.mp3 in repo root -->
+  <audio id="startupAudio" src="mm.ogg" preload="auto" autoplay playsinline></audio></audio>
 
   <button class="hamburger" id="hamburger" aria-label="Menü öffnen"><span></span></button>
 
@@ -234,6 +257,7 @@
   </div>
 
   <script>
+    // ===== Helpers & storage =====
     const $ = (s,r=document)=>r.querySelector(s);
     const $$ = (s,r=document)=>Array.from(r.querySelectorAll(s));
     const uid = ()=>Math.random().toString(36).slice(2,10);
@@ -248,6 +272,7 @@
     const save=()=>{ try{localStorage.setItem(STORE_CONTACTS,JSON.stringify(state.contacts))}catch{}; try{localStorage.setItem(STORE_NOTES,JSON.stringify(state.notes))}catch{}; try{localStorage.setItem(STORE_CASES,JSON.stringify(state.cases))}catch{} };
     const load=()=>{ try{state.contacts=JSON.parse(localStorage.getItem(STORE_CONTACTS)||'[]')}catch{}; try{state.notes=JSON.parse(localStorage.getItem(STORE_NOTES)||'[]')}catch{}; try{state.cases=JSON.parse(localStorage.getItem(STORE_CASES)||'[]')}catch{} };
 
+    // ===== Navigation + Splash + Startup-Sound =====
     function switchPage(page){
       $$('#nav button').forEach(b=>b.classList.toggle('active', b.dataset.page===page));
       $('#page-contacts').classList.toggle('hidden', page!=='contacts');
@@ -256,8 +281,18 @@
       if(matchMedia('(max-width:1024px)').matches) $('#sidebar').classList.remove('open');
     }
 
-    function playStartup(){ try{ const a=$('#startup'); a && a.play().catch(()=>{}); }catch(e){} }
+    function playStartup(){
+      const a = document.getElementById('startupAudio');
+      if(!a) return;
+      const tryPlay = ()=>{ a.currentTime=0; a.volume=0.9; a.play().catch(()=>{}); };
+      // Try immediately and again after first interaction if blocked
+      tryPlay();
+      window.addEventListener('pointerdown', tryPlay, {once:true});
+    }
 
+    function hideSplash(){ const s=$('#splash'); s.classList.add('fadeout'); setTimeout(()=>s.remove(), 700); }
+
+    // ===== Contacts =====
     function renderContacts(){
       let list=[...state.contacts];
       if(state.q){ const q=state.q.toLowerCase(); list=list.filter(c=>(c.name||'').toLowerCase().includes(q)||(c.phone||'').toLowerCase().includes(q)||(c.note||'').toLowerCase().includes(q)); }
@@ -280,35 +315,39 @@
     function updateContact(id,patch){ const i=state.contacts.findIndex(x=>x.id===id); if(i>-1){ state.contacts[i]={...state.contacts[i],...patch}; save(); renderContacts(); }}
     function deleteContact(id){ state.contacts=state.contacts.filter(x=>x.id!==id); save(); renderContacts(); }
 
+    // ===== Notes =====
     function renderNotes(){ const tbody=$('#notesBody'); tbody.innerHTML=''; for(const n of state.notes){ const tr=document.createElement('tr'); const thumb=n.image?`<img src="${n.image}" alt="Bild" style="width:64px;height:64px;object-fit:cover;border-radius:12px;border:1px solid var(--border)"/>`:'<span class="muted">–</span>'; tr.innerHTML=`<td>${escapeHtml(n.title||'Ohne Titel')}</td><td>${escapeHtml(n.tags||'')}</td><td>${thumb}</td><td class="actions"><button class="btn ghost" data-act="open" data-id="${n.id}">Öffnen</button><button class="btn danger" data-act="del-note" data-id="${n.id}">Löschen</button></td>`; tbody.appendChild(tr);} }
     function addNote(note){ state.notes.unshift({id:uid(),...note}); save(); renderNotes(); }
     function deleteNote(id){ state.notes=state.notes.filter(x=>x.id!==id); save(); renderNotes(); }
 
-    function openNoteModal(n){ const modal=document.createElement('div'); modal.className='glass fade-in'; modal.style.cssText='position:fixed;inset:0;display:grid;place-items:center;background:rgba(2,6,23,.55);padding:20px;z-index:40'; const box=document.createElement('div'); box.className='glass'; box.style.cssText='max-width:920px;width:95vw;border-radius:20px;padding:18px;'; box.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h3 style="margin:0">${escapeHtml(n.title||'Ohne Titel')}</h3><button id="closeModal" class="btn ghost">Schließen</button></div><div class="muted" style="margin:.25rem 0">${escapeHtml(n.tags||'')}</div><div style="display:grid;grid-template-columns:300px 1fr;gap:14px;margin-top:12px"><div>${n.image?`<img src="${n.image}" alt="Bild" style="width:100%;border-radius:16px;border:1px solid var(--border);object-fit:cover"/>`:'<div class="muted">Kein Bild</div>'}</div><div style="white-space:pre-wrap">${escapeHtml(n.text||'')}</div></div>`; modal.appendChild(box); modal.addEventListener('click',e=>{ if(e.target===modal||e.target.id==='closeModal') modal.remove();}); document.body.appendChild(modal); }
+    function openNoteModal(n){ const modal=document.createElement('div'); modal.className='glass fade-in'; modal.style.cssText='position:fixed;inset:0;display:grid;place-items:center;background:rgba(2,6,23,.55);padding:20px;z-index:40'; const box=document.createElement('div'); box.className='glass'; box.style.cssText='max-width:920px;width:95vw;border-radius:20px;padding:18px;'; box.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h3 style="margin:0">${escapeHtml(n.title||'Ohne Titel')}</h3><button id=\"closeModal\" class=\"btn ghost\">Schließen</button></div><div class=\"muted\" style=\"margin:.25rem 0\">${escapeHtml(n.tags||'')}</div><div style=\"display:grid;grid-template-columns:300px 1fr;gap:14px;margin-top:12px\"><div>${n.image?`<img src=\"${n.image}\" alt=\"Bild\" style=\"width:100%;border-radius:16px;border:1px solid var(--border);object-fit:cover\"/>`:'<div class=\"muted\">Kein Bild</div>'}</div><div style=\"white-space:pre-wrap\">${escapeHtml(n.text||'')}</div></div>`; modal.appendChild(box); modal.addEventListener('click',e=>{ if(e.target===modal||e.target.id==='closeModal') modal.remove();}); document.body.appendChild(modal); }
 
+    // ===== Cases (KriPo-Seite) =====
     function renderCases(){ const tbody=$('#casesBody'); tbody.innerHTML=''; for(const c of state.cases){ const tr=document.createElement('tr'); tr.innerHTML=`<td>${escapeHtml(c.number||'—')}</td><td>${escapeHtml(c.title||'')}</td><td>${escapeHtml(c.status||'')}</td><td class="actions"><button class="btn ghost" data-act="open-case" data-id="${c.id}">Öffnen</button><button class="btn danger" data-act="del-case" data-id="${c.id}">Löschen</button></td>`; tbody.appendChild(tr);} }
     function addCase(obj){ state.cases.unshift({id:uid(), ...obj, interrogations:[], images:[]}); save(); renderCases(); }
     function deleteCase(id){ state.cases=state.cases.filter(x=>x.id!==id); save(); renderCases(); }
 
-    function openCaseModal(c){ const modal=document.createElement('div'); modal.className='glass fade-in'; modal.style.cssText='position:fixed;inset:0;display:grid;place-items:center;background:rgba(2,6,23,.55);padding:20px;z-index:40'; const box=document.createElement('div'); box.className='glass'; box.style.cssText='max-width:1000px;width:96vw;border-radius:20px;padding:18px;'; box.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">${escapeHtml(c.title)} <span class="pill" style="margin-left:8px">${escapeHtml(c.number)}</span></h3><button id="closeCase" class="btn ghost">Schließen</button></div><div class="muted" style="margin:.3rem 0">Status: ${escapeHtml(c.status||'—')} · Tags: ${escapeHtml(c.tags||'—')}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px"><div><h4>Beteiligte</h4><div class="glass" style="padding:10px;border-radius:14px">${escapeHtml(c.people||'—')}</div><h4 style="margin-top:12px">Beschreibung</h4><div class="glass" style="padding:10px;border-radius:14px;white-space:pre-wrap">${escapeHtml(c.desc||'—')}</div></div><div><h4>Verhöre</h4><div id="interroList" class="glass" style="padding:10px;border-radius:14px;max-height:220px;overflow:auto">${(c.interrogations||[]).map(x=>`<div style='border-bottom:1px solid rgba(255,255,255,.08);padding:6px 0'><strong>${escapeHtml(x.when)}</strong><div style='white-space:pre-wrap'>${escapeHtml(x.text)}</div></div>`).join('') || '<div class="muted">Keine Einträge</div>'}</div><div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:10px"><input id="interroText" placeholder="Verhörnotiz…"/><button id="addInterro" class="btn primary">Hinzufügen</button></div><h4 style="margin-top:12px">Bilder</h4><div id="imgWrap" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px">${(c.images||[]).map(u=>`<img src='${u}' alt='Bild' style='width:100%;height:90px;object-fit:cover;border-radius:12px;border:1px solid var(--border)'/>`).join('')}</div><label class="btn primary" style="margin-top:8px;display:inline-grid"><input id="caseImgInput" type="file" accept="image/*" class="hidden"/>Bild hochladen</label></div></div>`; modal.appendChild(box);
+    function openCaseModal(c){ const modal=document.createElement('div'); modal.className='glass fade-in'; modal.style.cssText='position:fixed;inset:0;display:grid;place-items:center;background:rgba(2,6,23,.55);padding:20px;z-index:40'; const box=document.createElement('div'); box.className='glass'; box.style.cssText='max-width:1000px;width:96vw;border-radius:20px;padding:18px;'; box.innerHTML=`<div style=\"display:flex;justify-content:space-between;align-items:center\"><h3 style=\"margin:0\">${escapeHtml(c.title)} <span class=\"pill\" style=\"margin-left:8px\">${escapeHtml(c.number)}</span></h3><button id=\"closeCase\" class=\"btn ghost\">Schließen</button></div><div class=\"muted\" style=\"margin:.3rem 0\">Status: ${escapeHtml(c.status||'—')} · Tags: ${escapeHtml(c.tags||'—')}</div><div style=\"display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px\"><div><h4>Beteiligte</h4><div class=\"glass\" style=\"padding:10px;border-radius:14px\">${escapeHtml(c.people||'—')}</div><h4 style=\"margin-top:12px\">Beschreibung</h4><div class=\"glass\" style=\"padding:10px;border-radius:14px;white-space:pre-wrap\">${escapeHtml(c.desc||'—')}</div></div><div><h4>Verhöre</h4><div id=\"interroList\" class=\"glass\" style=\"padding:10px;border-radius:14px;max-height:220px;overflow:auto\">${(c.interrogations||[]).map(x=>`<div style='border-bottom:1px solid rgba(255,255,255,.08);padding:6px 0'><strong>${escapeHtml(x.when)}</strong><div style='white-space:pre-wrap'>${escapeHtml(x.text)}</div></div>`).join('') || '<div class=\"muted\">Keine Einträge</div>'}</div><div style=\"display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:10px\"><input id=\"interroText\" placeholder=\"Verhörnotiz…\"/><button id=\"addInterro\" class=\"btn primary\">Hinzufügen</button></div><h4 style=\"margin-top:12px\">Bilder</h4><div id=\"imgWrap\" style=\"display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px\">${(c.images||[]).map(u=>`<img src='${u}' alt='Bild' style='width:100%;height:90px;object-fit:cover;border-radius:12px;border:1px solid var(--border)'/>`).join('')}</div><label class=\"btn primary\" style=\"margin-top:8px;display:inline-grid\"><input id=\"caseImgInput\" type=\"file\" accept=\"image/*\" class=\"hidden\"/>Bild hochladen</label></div></div>`; modal.appendChild(box);
       modal.addEventListener('click',e=>{ if(e.target===modal||e.target.id==='closeCase'){ modal.remove(); }});
-      box.querySelector('#addInterro').addEventListener('click',()=>{ const t=box.querySelector('#interroText').value.trim(); if(!t) return; const entry={when:new Date().toLocaleString(), text:t}; c.interrogations.unshift(entry); save(); modal.remove(); openCaseModal(c); renderCases(); });
-      box.querySelector('#caseImgInput').addEventListener('change', async (e)=>{ const f=e.target.files&&e.target.files[0]; if(!f) return; const url=await readAsDataURL(f); (c.images||(c.images=[])).push(url); save(); modal.remove(); openCaseModal(c); renderCases(); });
+      box.querySelector('#addInterro').addEventListener('click',()=>{ const t=box.querySelector('#interroText').value.trim(); if(!t) return; const entry={when:new Date().toLocaleString(), text:t}; c.interrogations.unshift(entry); save(); openCaseModalReplace(modal, c); });
+      box.querySelector('#caseImgInput').addEventListener('change', async (e)=>{ const f=e.target.files&&e.target.files[0]; if(!f) return; const url=await readAsDataURL(f); (c.images||(c.images=[])).push(url); save(); openCaseModalReplace(modal, c); });
       document.body.appendChild(modal);
     }
+    function openCaseModalReplace(modal,c){ modal.remove(); openCaseModal(c); renderCases(); }
 
     const readAsDataURL=(file)=>new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); });
 
+    // ===== Init =====
     function init(){
       load(); renderContacts(); renderNotes(); renderCases();
-      // try to play immediately; some browsers may still block auto audio
       playStartup();
-      document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') playStartup(); }, {once:true});
-      setTimeout(()=>{ const s=$('#splash'); s.classList.add('fadeout'); setTimeout(()=>s.remove(), 700); }, 800);
+      setTimeout(hideSplash, 800);
 
+      // Sidebar
       $('#hamburger').addEventListener('click',()=>$('#sidebar').classList.toggle('open'));
       $$('#nav button').forEach(btn=>btn.addEventListener('click',()=>switchPage(btn.dataset.page)));
 
+      // Contacts events
       $('#addContact').addEventListener('click',()=>{ const n=$('#name').value, p=$('#phone').value, nt=$('#note').value; if(!n.trim()) return alert('Bitte Namen eingeben.'); if(!p.trim()) return alert('Bitte Telefonnummer eingeben.'); addContact(n,p,nt); $('#name').value=$('#phone').value=$('#note').value=''; $('#name').focus(); });
       $('#search').addEventListener('input',e=>{ state.q=e.target.value; renderContacts(); });
       $$('button[data-sort]').forEach(b=>b.addEventListener('click',()=>{ const k=b.dataset.sort; if(state.sortBy===k) state.sortDir=state.sortDir==='asc'?'desc':'asc'; else{ state.sortBy=k; state.sortDir='asc'; } renderContacts(); }));
@@ -317,12 +356,15 @@
       $('#importContacts').addEventListener('click',()=>$('#importContactsFile').click());
       $('#importContactsFile').addEventListener('change',async e=>{ const f=e.target.files&&e.target.files[0]; if(!f) return; const text=await f.text(); try{ const data=JSON.parse(text); if(!Array.isArray(data)) throw new Error('Ungültiges Format'); data.forEach(x=>state.contacts.push({id:uid(),name:x.name||'',phone:x.phone||'',note:x.note||''})); save(); renderContacts(); alert('Import fertig'); }catch(err){ alert('Import fehlgeschlagen: '+err.message);} e.target.value=''; });
 
+      // Notes events
       $('#addNote').addEventListener('click',async ()=>{ const title=$('#noteTitle').value; const tags=$('#noteTags').value; const text=$('#noteText').value; const f=$('#noteImage').files[0]; let image=''; if(f){ try{ image=await readAsDataURL(f);}catch{} } if(!title.trim() && !text.trim() && !image) return alert('Bitte mindestens Titel, Text oder Bild angeben.'); addNote({title:title.trim(),tags:tags.trim(),text:text.trim(),image}); $('#noteTitle').value=$('#noteTags').value=$('#noteText').value=''; $('#noteImage').value=''; });
       $('#notesBody').addEventListener('click',e=>{ const btn=e.target.closest('button'); if(!btn) return; const id=btn.dataset.id; const act=btn.dataset.act; const n=state.notes.find(x=>x.id===id); if(!n) return; if(act==='open') openNoteModal(n); if(act==='del-note'){ if(confirm('Diese Notiz löschen?')) deleteNote(id); }});
 
+      // Cases events
       $('#addCase').addEventListener('click',()=>{ const obj={ title:$('#caseTitle').value.trim(), number:$('#caseNumber').value.trim(), status:$('#caseStatus').value.trim(), people:$('#casePeople').value.trim(), tags:$('#caseTags').value.trim(), desc:$('#caseDesc').value.trim() }; if(!obj.title||!obj.number) return alert('Titel und Aktenzeichen sind erforderlich.'); addCase(obj); $('#caseTitle').value=$('#caseNumber').value=$('#caseStatus').value=$('#casePeople').value=$('#caseTags').value=$('#caseDesc').value=''; });
       $('#casesBody').addEventListener('click',e=>{ const btn=e.target.closest('button'); if(!btn) return; const id=btn.dataset.id; const act=btn.dataset.act; const c=state.cases.find(x=>x.id===id); if(!c) return; if(act==='open-case') openCaseModal(c); if(act==='del-case'){ if(confirm('Diesen Fall löschen?')) deleteCase(id); } });
 
+      // Enter shortcuts
       ['name','phone','note'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); document.getElementById('addContact').click(); } }); });
     }
 

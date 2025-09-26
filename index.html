@@ -318,13 +318,30 @@
     window.addEventListener('pointerdown', ()=>playStartup(), {once:true}); // fallback
 
     // ===== Firebase Config (PLACEHOLDER — eintragen!) =====
-    const firebaseConfig = {
-      apiKey: "PASTE_YOUR_API_KEY",
-      authDomain: "PASTE_YOUR_PROJECT.firebaseapp.com",
-      projectId: "PASTE_YOUR_PROJECT",
-      storageBucket: "PASTE_YOUR_PROJECT.appspot.com",
-      messagingSenderId: "PASTE_SENDER_ID",
-      appId: "PASTE_APP_ID"
+<script>
+  // ===== Firebase Config (deine echten Werte) =====
+  const firebaseConfig = {
+    apiKey: "AIzaSyBN60Xp5JfDZVHPQeUH4ZnGS9eZf1ebscM",
+    authDomain: "datenbankrp.firebaseapp.com",
+    projectId: "datenbankrp",
+    storageBucket: "datenbankrp.firebasestorage.app",
+    messagingSenderId: "334767405699",
+    appId: "1:334767405699:web:d8d3ec72401b69d113f9b6"
+  };
+
+  // Init primary app (compat SDKs oben eingebunden)
+  const app = firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db   = firebase.firestore();
+</script>
+
+
+  // Init primary app (compat SDKs werden oben per <script> geladen)
+  const app = firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db   = firebase.firestore();
+</script>
+
     };
 
     // Init primary app

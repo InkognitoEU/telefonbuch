@@ -7,11 +7,11 @@
   <meta name="description" content="Inkognitos Forum: Login-geschütztes Dashboard mit Rollen, Telefonbuch, Notizen, Fällen, Chat (Base64) und Admin-Loginprotokoll. Firestore-only.">
   <style>
     :root{
-      /* neue lila/dunkel Palette */
+      /* lila/dunkle Palette */
       --bg:#0b0914; --bg2:#120e1f;
       --glass:rgba(26,20,39,0.65); --glass2:rgba(20,15,32,0.6);
       --border:rgba(255,255,255,.12); --text:#e6e0f9; --muted:#a49bbd;
-      --accent:#9b5dff; --accent2:#6d28d9; --vio1:#7c3aed; --vio2:#a78bfa;
+      --accent:#9b5dff; --accent2:#6d28d9;
       --ok:#22c55e; --danger:#ef4444; --warn:#f59e0b;
       --radius:18px; --gap:14px; --maxw:1280px;
     }
@@ -92,7 +92,7 @@
     ::placeholder{color:#c4b9e6}
     textarea{min-height:120px; resize:vertical}
 
-    /* NICHT transparent: fette liquid Buttons */
+    /* Liquid, nicht transparent */
     .btn{display:inline-grid; place-items:center; padding:12px 16px; border-radius:999px; color:white; font-weight:800;
       cursor:pointer; user-select:none; border:none; position:relative; isolation:isolate;
       transition:transform .24s cubic-bezier(.2,1.2,.2,1), filter .2s}
@@ -112,7 +112,7 @@
     .btn:active{transform:scale(.97)}
     .pill{padding:8px 12px; border-radius:999px; background:rgba(155,93,255,.15); border:1px solid rgba(255,255,255,.16)}
 
-    /* Tables/general */
+    /* Tabellen etc. */
     .row{display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:var(--gap)}
     @media (max-width:900px){ .row{grid-template-columns:1fr 1fr} }
     @media (max-width:560px){ .row{grid-template-columns:1fr} }
@@ -369,6 +369,8 @@
 
     let currentUser=null, role='user', disabled=false;
     let unsubContacts=null,unsubNotes=null,unsubCases=null,unsubChat=null,unsubUsers=null,unsubLogins=null;
+    /* >>> Live-Kick: Profil-Listener-Handle */
+    let unsubMyProfile = null;
 
     // ===== AUTH & ACCESS =====
     async function loadProfile(uid){
@@ -421,7 +423,7 @@
     });
 
     $('#btnSignOut').addEventListener('click', async ()=>{
-      [unsubContacts,unsubNotes,unsubCases,unsubChat,unsubUsers,unsubLogins].forEach(fn=>fn&&fn());
+      [unsubContacts,unsubNotes,unsubCases,unsubChat,unsubUsers,unsubLogins,unsubMyProfile].forEach(fn=>fn&&fn());
       await auth.signOut(); currentUser=null; role='user'; disabled=false;
       ['contactsBody','notesBody','casesBody','chatList','usersBody','loginBody'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML=''; });
       applyAccessUI();
@@ -434,11 +436,25 @@
         const prof=await loadProfile(user.uid);
         role = prof.role || 'user'; disabled=!!prof.disabled;
         if(disabled){ await auth.signOut(); return; }
+
+        /* >>> LIVE-KICK: auf eigenes Profil hören und bei disabled sofort ausloggen */
+        if (unsubMyProfile) unsubMyProfile();
+        unsubMyProfile = db.collection('profiles').doc(user.uid)
+          .onSnapshot(snap=>{
+            const p = snap.data() || {};
+            if (p.disabled) {
+              alert('Dein Konto wurde gesperrt. Du wirst jetzt ausgeloggt.');
+              auth.signOut();
+            }
+          });
+
         if(!_loginLoggedOnce){ _loginLoggedOnce=true; logLoginEvent(user); }
         startSubscriptions();
         applyAccessUI();
       }else{
-        currentUser=null; role='user'; disabled=false; applyAccessUI();
+        currentUser=null; role='user'; disabled=false;
+        if (unsubMyProfile) { unsubMyProfile(); unsubMyProfile=null; }
+        applyAccessUI();
       }
     });
 

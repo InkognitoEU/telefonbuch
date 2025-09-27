@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Dashboard — Telefonbuch · Notizen · Fälle · Chat</title>
-  <meta name="description" content="Login-geschütztes Dashboard mit Rollen (user/admin/rechte), Telefonbuch, Notizen, Fällen und Chat mit Datei-Upload. Firestore + Firebase Storage. Apple-inspiriertes Dark-Blue-Glass UI.">
+  <meta name="description" content="Login-geschütztes Dashboard mit Rollen (user/admin/rechte), Telefonbuch, Notizen, Fällen und Chat (Bilder Base64). Firestore-only, kostenlos.">
   <style>
     :root{
       --bg:#0b1220; --bg2:#0a101c; --glass:rgba(10,16,28,.55); --glass2:rgba(12,18,32,.45);
@@ -13,19 +13,15 @@
       --radius:18px; --gap:14px; --maxw:1280px;
     }
     *{box-sizing:border-box} html,body{height:100%}
-    body{
-      margin:0; font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Arial,sans-serif; color:var(--text);
-      background:radial-gradient(1400px 900px at 15% 10%, #0f1a2f 0%, var(--bg2) 55%, #070c16 100%); overflow-x:hidden;
-    }
+    body{margin:0; font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Arial,sans-serif; color:var(--text);
+      background:radial-gradient(1400px 900px at 15% 10%, #0f1a2f 0%, var(--bg2) 55%, #070c16 100%); overflow-x:hidden;}
 
-    /* Splash + Login-Overlay */
+    /* Splash + Login */
     .splash{position:fixed; inset:0; display:grid; place-items:center; background:radial-gradient(1400px 900px at 50% 40%, #0f1a2f 0%, #091222 70%); z-index:50}
-    .splash .box{text-align:center}
-    .splash h2{margin:0; font-size:clamp(1.6rem,4vw,2.6rem)}
+    .splash .box{text-align:center} .splash h2{margin:0; font-size:clamp(1.6rem,4vw,2.6rem)}
     .splash.fadeout{animation:splashout .7s cubic-bezier(.2,1,.2,1) forwards}
     @keyframes splashout{to{opacity:0; transform:scale(1.02); visibility:hidden}}
-    .dot{display:inline-block; width:0.6ch; text-align:left; opacity:0}
-    @keyframes blink{0%,20%{opacity:0}40%,100%{opacity:1}}
+    .dot{display:inline-block; width:0.6ch; text-align:left; opacity:0} @keyframes blink{0%,20%{opacity:0}40%,100%{opacity:1}}
     .dot1{animation:blink 1.2s infinite}.dot2{animation:blink 1.2s infinite .2s}.dot3{animation:blink 1.2s infinite .4s}
 
     .login-overlay{position:fixed; inset:0; display:grid; place-items:center; backdrop-filter:blur(10px); background:rgba(2,6,23,.55); z-index:40}
@@ -122,7 +118,7 @@
     </div>
   </div>
 
-  <!-- login overlay (sichtbar bis Login) -->
+  <!-- login overlay -->
   <div class="login-overlay" id="loginOverlay">
     <div class="glass login-card">
       <h2 style="margin:0 0 6px 0">Anmelden</h2>
@@ -218,7 +214,7 @@
               <textarea id="noteText" placeholder="Schreibe deine Notiz…"></textarea>
             </label>
           </div>
-          <div class="muted" style="margin-top:6px">Bilder sind Base64 im Dokument (Demo). Für große Mengen später Storage nutzen.</div>
+          <div class="muted" style="margin-top:6px">Bilder sind Base64 im Dokument (Demo). Für große Mengen lieber extern hosten.</div>
         </section>
 
         <section class="glass section" style="overflow:auto; max-height:60vh">
@@ -258,22 +254,23 @@
         </section>
       </section>
 
-      <!-- Chat (nur rechte/admin) -->
+      <!-- Chat (rechte/admin) -->
       <section id="page-chat" class="hidden fade-in">
         <section class="glass section">
           <h2 style="margin:0 0 8px 0">Team-Chat</h2>
           <div id="chatList" style="display:flex; flex-direction:column; gap:10px; max-height:50vh; overflow:auto; padding-right:6px"></div>
         </section>
         <section class="glass section" style="display:grid; gap:10px">
-          <textarea id="chatText" placeholder="Nachricht schreiben… (Enter zum Senden, Shift+Enter = Zeilenumbruch)" style="min-height:70px"></textarea>
+          <textarea id="chatText" placeholder="Nachricht schreiben… (Enter = Senden, Shift+Enter = Zeilenumbruch)" style="min-height:70px"></textarea>
           <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
             <label class="btn ghost" style="display:inline-grid">
-              <input id="chatFile" type="file" class="hidden" />
-              Datei anhängen
+              <input id="chatFile" type="file" accept="image/*,application/pdf" class="hidden" />
+              Datei/Bild anhängen
             </label>
             <div id="chatFileName" class="muted">Keine Datei</div>
             <button id="chatSend" class="btn primary">Senden</button>
           </div>
+          <div class="muted" style="font-size:.9rem">Hinweis: Upload-Limit ~2 MB pro Nachricht (Base64 in Firestore).</div>
         </section>
       </section>
 
@@ -286,19 +283,19 @@
               <div class="pill">BKA</div><div style="margin-top:6px">Bundeskriminalamt</div>
             </a>
             <a class="glass" href="https://www.gesetze-im-internet.de/stgb/" target="_blank" style="padding:14px;border-radius:16px;text-decoration:none;color:inherit">
-              <div class="pill">StGB</div><div style="margin-top:6px">Strafgesetzbuch (Gesetze im Internet)</div>
+              <div class="pill">StGB</div><div style="margin-top:6px">Strafgesetzbuch</div>
             </a>
             <a class="glass" href="https://www.bundespolizei.de" target="_blank" style="padding:14px;border-radius:16px;text-decoration:none;color:inherit">
               <div class="pill">Bundespolizei</div><div style="margin-top:6px">Offizielle Website</div>
             </a>
             <a class="glass" href="https://www.wikipedia.org" target="_blank" style="padding:14px;border-radius:16px;text-decoration:none;color:inherit">
-              <div class="pill">Wikipedia</div><div style="margin-top:6px">Recherche & Grundlagen</div>
+              <div class="pill">Wikipedia</div><div style="margin-top:6px">Recherche</div>
             </a>
             <a class="glass" href="https://www.deepl.com/translator" target="_blank" style="padding:14px;border-radius:16px;text-decoration:none;color:inherit">
               <div class="pill">DeepL</div><div style="margin-top:6px">Übersetzungen</div>
             </a>
             <a class="glass" href="https://www.zeit.de" target="_blank" style="padding:14px;border-radius:16px;text-decoration:none;color:inherit">
-              <div class="pill">ZEIT</div><div style="margin-top:6px">Nachrichten & Dossiers</div>
+              <div class="pill">ZEIT</div><div style="margin-top:6px">Nachrichten</div>
             </a>
           </div>
         </section>
@@ -337,11 +334,10 @@
     </main>
   </div>
 
-  <!-- SDKs -->
+  <!-- Firebase SDKs (compat) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 
   <!-- Firebase Init -->
   <script id="firebase-init">
@@ -349,20 +345,19 @@
       apiKey: "AIzaSyBN60Xp5JfDZVHPQeUH4ZnGS9eZf1ebscM",
       authDomain: "datenbankrp.firebaseapp.com",
       projectId: "datenbankrp",
-      storageBucket: "datenbankrp.firebasestorage.app",
+      storageBucket: "datenbankrp.firebasestorage.app", /* bleibt einfach drin, wird aber nicht genutzt */
       messagingSenderId: "334767405699",
       appId: "1:334767405699:web:d8d3ec72401b69d113f9b6"
     };
     const app = firebase.apps.length ? firebase.app() : firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db   = firebase.firestore();
-    const st   = firebase.storage();
-    window.auth = auth; window.db = db; window.st = st;
+    window.auth = auth; window.db = db;
   </script>
 
   <!-- App Code -->
   <script>
-    // Splash timeline
+    // Splash
     function playStartup(){ try{ const a=document.getElementById('startupAudio'); a && a.play().catch(()=>{});}catch(e){} }
     function hideSplash(){ const s=document.getElementById('splash'); if(s){ s.classList.add('fadeout'); setTimeout(()=>s.remove(),700);} }
     setTimeout(()=>{ playStartup(); }, 2000);
@@ -393,7 +388,6 @@
       $('#roleBadge').textContent = role + (disabled?' (gesperrt)':'');
       $('#adminNav').classList.toggle('hidden', !(role==='admin'));
       $('#chatNav').classList.toggle('hidden', !(role==='admin' || role==='rechte'));
-      // App sichtbar nur wenn eingeloggt und nicht disabled
       const ok = !!currentUser && !disabled;
       $('#appRoot').classList.toggle('hidden', !ok);
       $('#loginOverlay').classList.toggle('hidden', ok);
@@ -414,14 +408,12 @@
         applyAccessUI();
       }catch(err){ console.error(err); $('#authStatus').textContent='Login fehlgeschlagen.'; }
     });
-
     $('#btnSignOut').addEventListener('click', async ()=>{
       if(unsubContacts) unsubContacts(); if(unsubNotes) unsubNotes(); if(unsubCases) unsubCases(); if(unsubChat) unsubChat(); if(unsubUsers) unsubUsers();
       await auth.signOut(); currentUser=null; role='user'; disabled=false;
       $('#contactsBody').innerHTML=''; $('#notesBody').innerHTML=''; $('#casesBody').innerHTML=''; $('#chatList').innerHTML=''; $('#usersBody').innerHTML='';
       applyAccessUI();
     });
-
     auth.onAuthStateChanged(async (user)=>{
       if(user){
         currentUser=user;
@@ -492,7 +484,11 @@
             const m=doc.data();
             const item=document.createElement('div');
             item.className='glass'; item.style.cssText='padding:10px;border-radius:14px';
-            const file = m.fileURL ? `<div><a href="${m.fileURL}" target="_blank" style="color:var(--accent)">${esc(m.fileName || 'Datei')}</a></div>`:''; 
+            const file = m.imageData
+              ? (m.mime?.startsWith('image/') 
+                  ? `<div style="margin-top:6px"><img src="${m.imageData}" alt="${esc(m.fileName||'Bild')}" style="max-width:100%;border-radius:12px;border:1px solid var(--border)"/></div>`
+                  : `<div><a href="${m.imageData}" download="${esc(m.fileName||'datei')}" style="color:var(--accent)">Datei herunterladen</a></div>`)
+              : '';
             item.innerHTML = `<div style="display:flex;justify-content:space-between;gap:8px">
                 <strong>${esc(m.display_name||m.uid)}</strong>
                 <span class="muted">${new Date(m.ts?.seconds? m.ts.seconds*1000 : Date.now()).toLocaleString()}</span>
@@ -536,7 +532,7 @@
       }
     }
 
-    // ===== CRUD helpers (Firestore) =====
+    // ===== CRUD helpers =====
     async function addContactFS(n,p,nt){ if(!currentUser) return alert('Bitte einloggen.'); await db.collection('contacts').add({ owner: currentUser.uid, name:n, phone:p, note:nt, updated_at: firebase.firestore.FieldValue.serverTimestamp() }); }
     async function addNoteFS(title,tags,text,image){ if(!currentUser) return alert('Bitte einloggen.'); await db.collection('notes').add({ owner: currentUser.uid, title, tags, text, image, updated_at: firebase.firestore.FieldValue.serverTimestamp() }); }
     async function addCaseFS(obj){ if(!currentUser) return alert('Bitte einloggen.'); await db.collection('cases').add({ owner: currentUser.uid, ...obj, images:[], interrogations:[], updated_at: firebase.firestore.FieldValue.serverTimestamp() }); }
@@ -551,7 +547,6 @@
     }
 
     // ===== UI Events =====
-    // Sidebar / pages
     $('#hamburger').addEventListener('click',()=>$('#sidebar').classList.toggle('open'));
     $$('#nav button').forEach(btn=>btn.addEventListener('click',()=>switchPage(btn.dataset.page)));
     function switchPage(page){
@@ -576,10 +571,8 @@
       const btn = e.target.closest('button'); if(!btn) return;
       const act=btn.dataset.act; const type=btn.dataset.type; const id=btn.dataset.id;
 
-      // delete
       if(act==='del'){ if(!confirm('Eintrag löschen?')) return; await db.collection(type+'s').doc(id).delete(); }
 
-      // edit contact inline
       if(act==='edit' && type==='contact'){
         const tr=btn.closest('tr'); const tds=tr.querySelectorAll('td');
         const [nameTd, phoneTd, noteTd] = tds; const name=nameTd.textContent.trim(); const phone=phoneTd.textContent.trim(); const note=noteTd.textContent.trim();
@@ -595,19 +588,15 @@
         if(!n||!p) return alert('Name/Telefon erforderlich');
         await db.collection('contacts').doc(id).update({ name:n, phone:p, note:nt, updated_at: firebase.firestore.FieldValue.serverTimestamp() });
       }
-      if(act==='cancel-edit'){ /* re-render via snapshot */ }
+      if(act==='cancel-edit'){ /* snapshot rendert zurück */ }
 
-      // note open
       if(act==='open-note'){ const doc = await db.collection('notes').doc(id).get(); openNoteModal(doc.data()); }
-
-      // case open
       if(act==='open-case'){ const doc = await db.collection('cases').doc(id).get(); openCaseModalFS(id, doc.data()); }
 
-      // Admin actions (profiles)
       if(act==='soft-delete'){ if(!confirm('Profil (soft) löschen?')) return; await db.collection('profiles').doc(id).delete(); alert('Profil-Dokument gelöscht. Auth-Konto bleibt bestehen.'); }
     });
 
-    // Admin: role/disabled changes via inputs
+    // Admin: role/disabled changes
     document.addEventListener('change', async (e)=>{
       const sel = e.target.closest('select[data-act="set-role"]');
       const chk = e.target.closest('input[data-act="toggle-disabled"]');
@@ -641,7 +630,7 @@
       document.body.appendChild(modal);
     }
 
-    // Cases modal (with interrogation & images)
+    // Cases modal
     function openCaseModalFS(id,c){
       const modal=document.createElement('div'); modal.className='glass fade-in';
       modal.style.cssText='position:fixed;inset:0;display:grid;place-items:center;background:rgba(2,6,23,.55);padding:20px;z-index:40';
@@ -673,7 +662,7 @@
               ${(c.images||[]).map(u=>`<img src='${u}' alt='Bild' style='width:100%;height:90px;object-fit:cover;border-radius:12px;border:1px solid var(--border)'/>`).join('')}
             </div>
             <label class="btn primary" style="margin-top:8px;display:inline-grid">
-              <input id="caseImgInput" type="file" accept="image/*" class="hidden"/>Bild hochladen
+              <input id="caseImgInput" type="file" accept="image/*" class="hidden"/>Bild anhängen
             </label>
           </div>
         </div>`;
@@ -687,7 +676,6 @@
         await db.collection('cases').doc(id).update({ interrogations: updated, updated_at: firebase.firestore.FieldValue.serverTimestamp() });
         modal.remove(); const doc=await db.collection('cases').doc(id).get(); openCaseModalFS(id, doc.data());
       });
-
       box.querySelector('#caseImgInput').addEventListener('change', async (e)=>{
         const f=e.target.files&&e.target.files[0]; if(!f) return;
         const url=await readAsDataURL(f);
@@ -699,7 +687,7 @@
       document.body.appendChild(modal);
     }
 
-    // Chat events
+    // Chat
     $('#chatFile').addEventListener('change', (e)=>{
       const f=e.target.files && e.target.files[0];
       $('#chatFileName').textContent = f ? `${f.name} (${Math.round(f.size/1024)} KB)` : 'Keine Datei';
@@ -710,24 +698,20 @@
     $('#chatSend').addEventListener('click', async ()=>{
       if(!(role==='admin' || role==='rechte')) return alert('Kein Chat-Zugriff.');
       const text=$('#chatText').value.trim(); const file=$('#chatFile').files[0];
-      if(!text && !file) return;
 
-      let fileURL='', fileName='';
+      let imageData='', fileName='', mime='';
       if(file){
-        const path=`chat_files/${currentUser.uid}/${Date.now()}_${file.name}`;
-        const ref=st.ref().child(path);
-        await ref.put(file);
-        fileURL = await ref.getDownloadURL();
-        fileName = file.name;
+        if(file.size > 2*1024*1024){ alert('Datei zu groß (max ~2 MB).'); return; }
+        imageData = await readAsDataURL(file); fileName = file.name; mime = file.type || 'application/octet-stream';
       }
+      if(!text && !imageData) return;
+
       await db.collection('chatMessages').add({
-        uid: currentUser.uid, display_name: currentUser.email || 'User', role, text, fileURL, fileName,
+        uid: currentUser.uid, display_name: currentUser.email || 'User', role, text, imageData, fileName, mime,
         ts: firebase.firestore.FieldValue.serverTimestamp()
       });
       $('#chatText').value=''; $('#chatFile').value=''; $('#chatFileName').textContent='Keine Datei';
     });
-
-    // ===== END App Code =====
   </script>
 </body>
 </html>
